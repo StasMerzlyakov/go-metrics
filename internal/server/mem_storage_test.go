@@ -18,7 +18,7 @@ func TestInt64MemStorage(t *testing.T) {
 	assert.True(t, v)
 	assert.Equal(t, int64(5), k)
 
-	k, v = ms.Get("m2")
+	_, v = ms.Get("m2")
 	assert.False(t, v)
 }
 
@@ -40,6 +40,6 @@ func TestFloat64MemStorage(t *testing.T) {
 	assert.True(t, v)
 	assert.Equal(t, float64(7), k)
 
-	k, v = ms.Get("m2")
+	_, v = ms.Get("m2")
 	assert.False(t, v)
 }

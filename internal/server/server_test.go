@@ -84,6 +84,7 @@ func TestServerCounter(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		res := w.Result()
+		res.Body.Close()
 		assert.Equal(t, test.expectedCode, res.StatusCode)
 		if res.StatusCode == http.StatusOK {
 			v, ok := counterStorage.Get(test.expectedKey)
@@ -190,14 +191,14 @@ func TestGaugeCounter(t *testing.T) {
 	}
 }
 
-type UrlTestCases struct {
+type URLTestCases struct {
 	input  string
 	result bool
 }
 
-func TestGetUrlRegexp(t *testing.T) {
-	reg := GetUrlRegexp()
-	testCases := []UrlTestCases{
+func TestGetURLRegexp(t *testing.T) {
+	reg := GetURLRegexp()
+	testCases := []URLTestCases{
 		{
 			"/a1s_asd1_1",
 			false,

@@ -30,7 +30,7 @@ func CreateGaugeConveyor(storage MemStorage[float64]) http.Handler {
 	return internal.Conveyor(GaugeHandlerCreator(storage), CheckInputMiddleware)
 }
 
-func GetUrlRegexp() *regexp.Regexp {
+func GetURLRegexp() *regexp.Regexp {
 	return regexp.MustCompile("^/[a-zA-Z][a-zA-Z0-9_]*/-?([1-9][0-9]*|0)([.][0-9]+)?$")
 }
 
@@ -40,7 +40,7 @@ func GetUrlRegexp() *regexp.Regexp {
 // - Content-Type: text/plain
 // - /<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 func CheckInputMiddleware(next http.Handler) http.Handler {
-	pathPattern := GetUrlRegexp()
+	pathPattern := GetURLRegexp()
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			http.Error(res, "only post methods", http.StatusMethodNotAllowed)
