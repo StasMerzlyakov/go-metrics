@@ -182,6 +182,7 @@ func TestGaugeCounter(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		res := w.Result()
+		res.Body.Close()
 		assert.Equal(t, test.expectedCode, res.StatusCode)
 		if res.StatusCode == http.StatusOK {
 			v, ok := gaugeStorage.Get(test.expectedKey)
