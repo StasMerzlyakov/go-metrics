@@ -7,7 +7,7 @@ type MetricsSource interface {
 	PollCount() int64
 }
 
-var ServerInteractionError = errors.New("server interaction error")
+var ErrServerInteraction = errors.New("server interaction error")
 
 type ResultSender interface {
 	SendGauge(name string, value float64) error

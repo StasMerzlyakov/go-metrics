@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-func NewHttpResultSender(serverAdd string, contentType string) ResultSender {
+func NewHTTPResultSender(serverAdd string, contentType string) ResultSender {
 	return &httpResultSender{
 		serverAdd:   serverAdd,
 		contentType: contentType,
@@ -30,9 +30,7 @@ func (h *httpResultSender) initIfNecessary() error {
 		defer h.sm.Unlock()
 		if h.client == nil {
 			h.client = &http.Client{}
-			if strings.HasSuffix(h.serverAdd, "/") {
-				h.serverAdd = h.serverAdd[:len(h.serverAdd)-1]
-			}
+			strings.TrimSuffix(h.serverAdd, "/")
 		}
 	}
 	return nil
@@ -42,8 +40,8 @@ func (h *httpResultSender) store(url string) error {
 	if err := h.initIfNecessary(); err != nil {
 		return err
 	}
-	fullUrl := h.serverAdd + url
-	res, err := h.client.Post(fullUrl, h.contentType, nil)
+	fullURL := h.serverAdd + url
+	res, err := h.client.Post(fullURL, h.contentType, nil)
 	if err != nil {
 		fmt.Printf("server interation error: %v\n", err.Error()) // log error
 		return err
@@ -57,7 +55,7 @@ func (h *httpResultSender) store(url string) error {
 		} else {
 			fmt.Printf("server error: \n    status: %v\n    content read error: %v\n", res.StatusCode, err.Error())
 		}
-		return ServerInteractionError
+		return ErrServerInteraction
 	}
 	return nil
 }

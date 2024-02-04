@@ -23,7 +23,7 @@ type Agent interface {
 func CreateAgent(ctx context.Context, config Configuration) (Agent, error) {
 	agent := &agent{
 		metricsSource: NewRuntimeMetricsSource(),
-		resultSender:  NewHttpResultSender(config.ServerAddr, config.ContentType),
+		resultSender:  NewHTTPResultSender(config.ServerAddr, config.ContentType),
 		gaugeStorage:  storage.NewMemoryFloat64Storage(),
 		poolCounter:   0,
 	}
