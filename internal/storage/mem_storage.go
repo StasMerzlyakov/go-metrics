@@ -1,23 +1,13 @@
-package server
+package storage
 
 import "sync"
 
-type MemValue interface {
-	int64 | float64
-}
-
-func NewFloat64Storage() MemStorage[float64] {
+func NewMemoryFloat64Storage() MetricsStorage[float64] {
 	return &memStorage[float64]{}
 }
 
-func NewInt64Storage() MemStorage[int64] {
+func NewMemoryInt64Storage() MetricsStorage[int64] {
 	return &memStorage[int64]{}
-}
-
-type MemStorage[T MemValue] interface {
-	Set(key string, value T)
-	Add(key string, value T)
-	Get(key string) (T, bool)
 }
 
 type memStorage[T MemValue] struct {

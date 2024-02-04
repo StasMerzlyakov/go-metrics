@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
 )
 
 func main() {
-	if err := server.CreateServer(); err != nil {
+	ctx := context.Background() // TODO
+	configuration := server.Configuration{}
+	if err := server.CreateServer(ctx, configuration); err != nil {
 		panic(err)
 	}
 }
