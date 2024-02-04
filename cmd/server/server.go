@@ -6,8 +6,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background() // TODO
-	configuration := server.Configuration{}
+	ctx := context.Background()             // TODO
+	configuration := server.Configuration{} // TODO
 	if err := server.CreateServer(ctx, configuration); err != nil {
 		panic(err)
 	}
