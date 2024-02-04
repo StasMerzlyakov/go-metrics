@@ -1,4 +1,4 @@
-package server
+package storage
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestInt64MemStorage(t *testing.T) {
-	ms := NewInt64Storage()
+	ms := NewMemoryInt64Storage()
 	ms.Add("m", 1)
 	ms.Add("m", 2)
 	k, v := ms.Get("m")
@@ -23,7 +23,7 @@ func TestInt64MemStorage(t *testing.T) {
 }
 
 func TestFloat64MemStorage(t *testing.T) {
-	ms := NewFloat64Storage()
+	ms := NewMemoryFloat64Storage()
 	ms.Add("m", 1)
 	ms.Add("m", 2)
 	k, v := ms.Get("m")
