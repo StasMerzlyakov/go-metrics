@@ -30,7 +30,7 @@ func (h *httpResultSender) initIfNecessary() error {
 		defer h.sm.Unlock()
 		if h.client == nil {
 			h.client = &http.Client{}
-			strings.TrimSuffix(h.serverAdd, "/")
+			h.serverAdd = strings.TrimSuffix(h.serverAdd, "/")
 		}
 	}
 	return nil
