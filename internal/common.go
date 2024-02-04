@@ -12,14 +12,14 @@ func BadRequestHandler(w http.ResponseWriter, req *http.Request) {
 func TodoResponse(res http.ResponseWriter, message string) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusNotImplemented)
-	fmt.Fprintf(res, fmt.Sprintf(`
+	fmt.Fprintf(res, `
       {
         "response": {
           "text": "%v"
         },
         "version": "1.0"
       }
-    `, message))
+    `, message)
 }
 
 type Middleware func(http.Handler) http.Handler
