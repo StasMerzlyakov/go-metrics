@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,8 @@ import (
 
 func TestCheckInputMiddleware(t *testing.T) {
 	checkInputMiddleware := CheckInputMiddleware(mockSuccessHandler)
+	srv := httptest.NewServer(checkInputMiddleware)
+	defer srv.Close()
 	testCases := []struct {
 		name        string
 		url         string
@@ -121,14 +124,14 @@ func TestCheckInputMiddleware(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			req, _ := http.NewRequest(test.method, test.url, nil)
+			req := resty.New().R()
+			req.Method = test.method
+			req.URL = srv.URL + test.url
 			req.Header.Add("Content-Type", test.contentType)
-			w := httptest.NewRecorder()
-			checkInputMiddleware.ServeHTTP(w, req)
-			res := w.Result()
-			defer res.Body.Close()
-			assert.Equal(t, test.want.code, res.StatusCode)
-			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			resp, err := req.Send()
+			assert.Nil(t, err)
+			assert.Equal(t, test.want.code, resp.StatusCode())
+			assert.Equal(t, test.want.contentType, resp.Header().Get("Content-Type"))
 		})
 	}
 }
