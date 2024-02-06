@@ -70,6 +70,7 @@ func (a *agent) PoolMetrics(ctx context.Context, pollIntervalSec int) {
 
 func (a *agent) ReportMetrics(ctx context.Context, reportIntervalSec int) {
 	counter := 0
+MAIN:
 	for {
 		select {
 		case <-ctx.Done():
@@ -83,7 +84,10 @@ func (a *agent) ReportMetrics(ctx context.Context, reportIntervalSec int) {
 				counter = 0
 				for _, key := range a.gaugeStorage.Keys() {
 					val, _ := a.gaugeStorage.Get(key)
-					_ = a.resultSender.SendGauge(key, val)
+					if err := a.resultSender.SendGauge(key, val); err != nil {
+						fmt.Printf("[%v] ReportMetrics ERROR %v\n", time.Now(), err)
+						continue MAIN
+					}
 				}
 				_ = a.resultSender.SendCounter("PoolCount", a.poolCounter)
 				fmt.Printf("[%v] ReportMetrics success - %v\n", time.Now(), a.poolCounter)
