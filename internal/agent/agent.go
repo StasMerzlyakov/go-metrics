@@ -9,11 +9,9 @@ import (
 )
 
 type Configuration struct {
-	ServerAddr        string
-	ContentType       string
-	PollIntervalSec   int
-	ReportIntervalSec int
-	// TODO - http timeout
+	ServerAddr     string
+	PollInterval   int
+	ReportInterval int
 }
 
 type Agent interface {
@@ -23,12 +21,12 @@ type Agent interface {
 func CreateAgent(ctx context.Context, config Configuration) (Agent, error) {
 	agent := &agent{
 		metricsSource: NewRuntimeMetricsSource(),
-		resultSender:  NewHTTPResultSender(config.ServerAddr, config.ContentType),
+		resultSender:  NewHTTPResultSender(config.ServerAddr),
 		gaugeStorage:  storage.NewMemoryFloat64Storage(),
 		poolCounter:   0,
 	}
-	go agent.PoolMetrics(ctx, config.PollIntervalSec)
-	go agent.ReportMetrics(ctx, config.ReportIntervalSec)
+	go agent.PoolMetrics(ctx, config.PollInterval)
+	go agent.ReportMetrics(ctx, config.ReportInterval)
 	agent.wg.Add(2)
 	return agent, nil
 }
@@ -62,7 +60,7 @@ func (a *agent) PoolMetrics(ctx context.Context, pollIntervalSec int) {
 					a.gaugeStorage.Set(k, v)
 				}
 				a.poolCounter = a.metricsSource.PollCount()
-				fmt.Printf("[%v] PoolMetrics - %v\n", time.Now(), a.poolCounter)
+				fmt.Printf("[%v] PoolMetrics [SUCCESS] (poolCounter %v)\n", time.Now(), a.poolCounter)
 			}
 		}
 	}
@@ -85,12 +83,12 @@ MAIN:
 				for _, key := range a.gaugeStorage.Keys() {
 					val, _ := a.gaugeStorage.Get(key)
 					if err := a.resultSender.SendGauge(key, val); err != nil {
-						fmt.Printf("[%v] ReportMetrics ERROR %v\n", time.Now(), err)
+						fmt.Printf("[%v] ReportMetrics [ERROR] (poolCounter %v)\n", time.Now(), err)
 						continue MAIN
 					}
 				}
 				_ = a.resultSender.SendCounter("PoolCount", a.poolCounter)
-				fmt.Printf("[%v] ReportMetrics success - %v\n", time.Now(), a.poolCounter)
+				fmt.Printf("[%v] ReportMetrics [SUCCESS] (poolCounter %v)\n", time.Now(), a.poolCounter)
 			}
 		}
 	}

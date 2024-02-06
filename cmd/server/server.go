@@ -1,14 +1,22 @@
 package main
 
 import (
-	"context"
+	"flag"
+	"fmt"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
+	"os"
 )
 
 func main() {
-	ctx := context.Background()             // TODO
-	configuration := server.Configuration{} // TODO
-	if err := server.CreateServer(ctx, configuration); err != nil {
+	configuration := new(server.Configuration)
+	configuration.Set(":8080") // Значение по-умолчанию
+	flag.Var(configuration, "a", "serverAddress")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+	if err := server.CreateServer(configuration); err != nil {
 		panic(err)
 	}
 }

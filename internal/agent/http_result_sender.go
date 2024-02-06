@@ -7,18 +7,19 @@ import (
 	"sync"
 )
 
-func NewHTTPResultSender(serverAdd string, contentType string) ResultSender {
+func NewHTTPResultSender(serverAdd string) ResultSender {
+	if !strings.HasPrefix(serverAdd, "http") {
+		serverAdd = "http://" + serverAdd
+	}
 	return &httpResultSender{
-		serverAdd:   serverAdd,
-		contentType: contentType,
+		serverAdd: serverAdd,
 	}
 }
 
 type httpResultSender struct {
-	serverAdd   string
-	contentType string
-	client      *resty.Client
-	sm          sync.Mutex
+	serverAdd string
+	client    *resty.Client
+	sm        sync.Mutex
 }
 
 func (h *httpResultSender) initIfNecessary() {

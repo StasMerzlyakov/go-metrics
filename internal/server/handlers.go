@@ -161,6 +161,10 @@ func AllMetricsViewHandlerCreator(
 	}
 }
 
+var DefaultHandler = func(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "", http.StatusNotImplemented)
+}
+
 var allMetricsViewTmpl, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
 <html lang="en">
 <body>

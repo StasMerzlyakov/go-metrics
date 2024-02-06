@@ -14,13 +14,10 @@ import (
 const textPlaint = "text/plain; charset=utf-8"
 
 func TestCreateServerHandler(t *testing.T) {
-	serverHandler := CreateServerHandler(
-		mockSuccessHandler,
-		mockSuccessHandler,
-		mockSuccessHandler,
-		mockSuccessHandler,
-		mockSuccessHandler,
-	)
+	serverHandler := Builder.NewConfigurationBuilder().
+		CounterPostHandler(mockSuccessHandler).
+		GaugePostHandler(mockSuccessHandler).
+		Build()
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
 	testCases := []struct {
@@ -161,13 +158,11 @@ func TestCounterValueHandler(t *testing.T) {
 	counterStorage := storage.NewMemoryInt64Storage()
 	counterPostHandler := CounterPostHandlerCreator(counterStorage)
 	counterGetHandler := CounterGetHandlerCreator(counterStorage)
-	serverHandler := CreateServerHandler(
-		mockSuccessHandler,
-		mockSuccessHandler,
-		counterPostHandler,
-		counterGetHandler,
-		mockSuccessHandler,
-	)
+	serverHandler := Builder.NewConfigurationBuilder().
+		CounterGetHandler(counterGetHandler).
+		CounterPostHandler(counterPostHandler).
+		Build()
+
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
 
@@ -216,13 +211,12 @@ func TestGaugeValueHandler(t *testing.T) {
 	gaugeStorage := storage.NewMemoryFloat64Storage()
 	gaugePostHandler := GaugePostHandlerCreator(gaugeStorage)
 	gaugeGetHandler := GaugeGetHandlerCreator(gaugeStorage)
-	serverHandler := CreateServerHandler(
-		gaugePostHandler,
-		gaugeGetHandler,
-		mockSuccessHandler,
-		mockSuccessHandler,
-		mockSuccessHandler,
-	)
+
+	serverHandler := Builder.NewConfigurationBuilder().
+		GaugePostHandler(gaugePostHandler).
+		GaugeGetHandler(gaugeGetHandler).
+		Build()
+
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
 
