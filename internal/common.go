@@ -9,6 +9,17 @@ func BadRequestHandler(w http.ResponseWriter, req *http.Request) {
 	http.Error(w, "BadRequest", http.StatusBadRequest)
 }
 
+func StatusMethodNotAllowedHandler(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "StatusMethodNotAllowed", http.StatusMethodNotAllowed)
+}
+func StatusNotImplemented(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "StatusMethodNotAllowed", http.StatusNotImplemented)
+}
+
+func StatusNotFound(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "StatusNotFound", http.StatusNotFound)
+}
+
 func TodoResponse(res http.ResponseWriter, message string) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusNotImplemented)
@@ -22,9 +33,9 @@ func TodoResponse(res http.ResponseWriter, message string) {
     `, message)
 }
 
-type Middleware func(http.Handler) http.Handler
+type Middleware func(http.HandlerFunc) http.HandlerFunc
 
-func Conveyor(h http.Handler, middlewares ...Middleware) http.Handler {
+func Conveyor(h http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	for _, middleware := range middlewares {
 		h = middleware(h)
 	}
