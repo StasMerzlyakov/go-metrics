@@ -16,10 +16,10 @@ const textPlaint = "text/plain; charset=utf-8"
 func TestCreateServerHandler(t *testing.T) {
 	serverHandler := CreateServerHandler(
 		mockSuccessHandler,
-		mockHttpSuccessHandler,
 		mockSuccessHandler,
-		mockHttpSuccessHandler,
-		mockHttpSuccessHandler,
+		mockSuccessHandler,
+		mockSuccessHandler,
+		mockSuccessHandler,
 	)
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
@@ -166,7 +166,7 @@ func TestCounterValueHandler(t *testing.T) {
 		mockSuccessHandler,
 		counterPostHandler,
 		counterGetHandler,
-		mockHttpSuccessHandler,
+		mockSuccessHandler,
 	)
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
@@ -221,7 +221,7 @@ func TestGaugeValueHandler(t *testing.T) {
 		gaugeGetHandler,
 		mockSuccessHandler,
 		mockSuccessHandler,
-		mockHttpSuccessHandler,
+		mockSuccessHandler,
 	)
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
@@ -266,15 +266,6 @@ func TestGaugeValueHandler(t *testing.T) {
 
 var mockSuccessHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-})
-
-var mockHttpSuccessHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-	w.Header().Add("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(`<!DOCTYPE html>
-       <html lang="en">
-       </html>
-    `))
 	w.WriteHeader(http.StatusOK)
 })
 
