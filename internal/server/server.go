@@ -1,7 +1,7 @@
 package server
 
 import (
-	"context"
+	"flag"
 	"github.com/StasMerzlyakov/go-metrics/internal"
 	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
@@ -9,11 +9,21 @@ import (
 )
 
 type Configuration struct {
+	url string
 }
 
-// TODO сделать более удобную конфигурацию (напрашивается Builder).
+func (c *Configuration) String() string {
+	return c.url
+}
 
-func CreateServer(ctx context.Context, config Configuration) error {
+func (c *Configuration) Set(s string) error {
+	c.url = s
+	return nil
+}
+
+var _ flag.Value = (*Configuration)(nil)
+
+func CreateServer(config *Configuration) error {
 	counterStorage := storage.NewMemoryInt64Storage()
 	gaugeStorage := storage.NewMemoryFloat64Storage()
 	gaugePostHandler := GaugePostHandlerCreator(gaugeStorage)
@@ -21,29 +31,67 @@ func CreateServer(ctx context.Context, config Configuration) error {
 	allMetricsHandler := AllMetricsViewHandlerCreator(counterStorage, gaugeStorage)
 	gaugeGetHandler := GaugeGetHandlerCreator(gaugeStorage)
 	counterGetHandler := CounterGetHandlerCreator(counterStorage)
-
-	serverHandler := CreateServerHandler(
-		gaugePostHandler,
-		gaugeGetHandler,
-		counterPostHandler,
-		counterGetHandler,
-		allMetricsHandler)
-	return http.ListenAndServe(":8080", serverHandler)
+	serverHandler := Builder.NewConfigurationBuilder().
+		GaugePostHandler(gaugePostHandler).
+		GaugeGetHandler(gaugeGetHandler).
+		CounterPostHandler(counterPostHandler).
+		CounterGetHandler(counterGetHandler).
+		AllMetricsHandler(allMetricsHandler).Build()
+	return http.ListenAndServe(config.url, serverHandler)
 }
 
-func CreateServerHandler(
-	gaugePostHandler http.HandlerFunc,
-	gaugeGetHandler http.HandlerFunc,
-	counterPostHandler http.HandlerFunc,
-	counterGetHandler http.HandlerFunc,
-	allMetricsHandler http.HandlerFunc,
+var Builder = &handlerConfigurationBuilder{}
 
-) http.Handler {
+type handlerConfigurationBuilder struct{}
 
-	fullGaugeHandler := CreateFullPostGaugeHandler(gaugePostHandler)
-	fullCounterHandler := CreateFullPostCounterHandler(counterPostHandler)
+func (b *handlerConfigurationBuilder) NewConfigurationBuilder() *handlerConfiguration {
+	return &handlerConfiguration{
+		allMetricsHandler:  DefaultHandler,
+		gaugeGetHandler:    DefaultHandler,
+		gaugePostHandler:   DefaultHandler,
+		counterGetHandler:  DefaultHandler,
+		counterPostHandler: DefaultHandler,
+	}
+}
+
+type handlerConfiguration struct {
+	allMetricsHandler  http.HandlerFunc
+	gaugePostHandler   http.HandlerFunc
+	counterPostHandler http.HandlerFunc
+	gaugeGetHandler    http.HandlerFunc
+	counterGetHandler  http.HandlerFunc
+}
+
+func (hCfg *handlerConfiguration) AllMetricsHandler(handler http.HandlerFunc) *handlerConfiguration {
+	hCfg.allMetricsHandler = handler
+	return hCfg
+}
+
+func (hCfg *handlerConfiguration) GaugePostHandler(handler http.HandlerFunc) *handlerConfiguration {
+	hCfg.gaugePostHandler = handler
+	return hCfg
+}
+
+func (hCfg *handlerConfiguration) CounterPostHandler(handler http.HandlerFunc) *handlerConfiguration {
+	hCfg.counterPostHandler = handler
+	return hCfg
+}
+
+func (hCfg *handlerConfiguration) GaugeGetHandler(handler http.HandlerFunc) *handlerConfiguration {
+	hCfg.gaugeGetHandler = handler
+	return hCfg
+}
+
+func (hCfg *handlerConfiguration) CounterGetHandler(handler http.HandlerFunc) *handlerConfiguration {
+	hCfg.counterGetHandler = handler
+	return hCfg
+}
+
+func (hCfg *handlerConfiguration) Build() http.Handler {
+	fullGaugeHandler := CreateFullPostGaugeHandler(hCfg.gaugePostHandler)
+	fullCounterHandler := CreateFullPostCounterHandler(hCfg.counterPostHandler)
 	r := chi.NewRouter()
-	r.Get("/", allMetricsHandler)
+	r.Get("/", hCfg.allMetricsHandler)
 	r.Post("/update/gauge/{name}/{value}", fullGaugeHandler)
 
 	r.Route("/update", func(r chi.Router) {
@@ -54,8 +102,8 @@ func CreateServerHandler(
 	})
 
 	r.Route("/value", func(r chi.Router) {
-		r.Get("/gauge/{name}", gaugeGetHandler)
-		r.Get("/counter/{name}", counterGetHandler)
+		r.Get("/gauge/{name}", hCfg.gaugeGetHandler)
+		r.Get("/counter/{name}", hCfg.counterGetHandler)
 	})
 	return r
 }

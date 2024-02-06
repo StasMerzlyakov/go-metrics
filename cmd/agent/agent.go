@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
 	"os"
 	"os/signal"
@@ -9,15 +11,19 @@ import (
 )
 
 func main() {
-	configuration := agent.Configuration{
-		ServerAddr:        "http://localhost:8080",
-		ContentType:       "text/plain",
-		PollIntervalSec:   2,
-		ReportIntervalSec: 10,
+	configuration := agent.Configuration{}
+
+	flag.StringVar(&configuration.ServerAddr, "a", "localhost:8080", "serverAddress")
+	flag.IntVar(&configuration.PollInterval, "p", 2, "poolInterval in seconds")
+	flag.IntVar(&configuration.ReportInterval, "r", 10, "poolInterval in seconds")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
 	}
+	flag.Parse()
 
 	// Взято отсюда: "Реализация Graceful Shutdown в Go"(https://habr.com/ru/articles/771626/)
-	// скорее на будущее для сервера
+	// Сейчас выглядит избыточным - оставил как задел на будущее для сервера
 	ctx, cancel := context.WithCancel(context.Background())
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
