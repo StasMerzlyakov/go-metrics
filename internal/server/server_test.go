@@ -13,7 +13,7 @@ import (
 
 const textPlaint = "text/plain; charset=utf-8"
 
-func TestCreateServerHandler(t *testing.T) {
+func TestServerMiddlewareChain(t *testing.T) {
 	serverHandler := Builder.NewConfigurationBuilder().
 		CounterPostHandler(mockSuccessHandler).
 		GaugePostHandler(mockSuccessHandler).

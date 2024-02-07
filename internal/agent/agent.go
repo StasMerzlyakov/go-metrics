@@ -9,16 +9,16 @@ import (
 )
 
 type Configuration struct {
-	ServerAddr     string
-	PollInterval   int
-	ReportInterval int
+	ServerAddr     string `env:"ADDRESS"`
+	PollInterval   int    `env:"POLL_INTERVAL"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
 }
 
 type Agent interface {
 	Wait()
 }
 
-func CreateAgent(ctx context.Context, config Configuration) (Agent, error) {
+func CreateAgent(ctx context.Context, config *Configuration) (Agent, error) {
 	agent := &agent{
 		metricsSource: NewRuntimeMetricsSource(),
 		resultSender:  NewHTTPResultSender(config.ServerAddr),
