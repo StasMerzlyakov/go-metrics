@@ -85,16 +85,15 @@ func CheckMetricNameMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func GaugePostHandlerCreator(storage storage.MetricsStorage[float64]) http.HandlerFunc {
-	return func(res http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		name := chi.URLParam(req, "name")
 		valueStr := chi.URLParam(req, "value")
 		value, err := ExtractFloat64(valueStr)
 		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		storage.Set(name, value)
-		res.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -108,21 +107,19 @@ func GaugeGetHandlerCreator(gaugeStorage storage.MetricsStorage[float64]) http.H
 		} else {
 			w.Write([]byte(fmt.Sprintf("%v", v)))
 		}
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func CounterPostHandlerCreator(storage storage.MetricsStorage[int64]) http.HandlerFunc {
-	return func(res http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		name := chi.URLParam(req, "name")
 		valueStr := chi.URLParam(req, "value")
 		value, err := ExtractInt64(valueStr)
 		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		storage.Add(name, value)
-		res.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -132,11 +129,9 @@ func CounterGetHandlerCreator(counterStorage storage.MetricsStorage[int64]) http
 		name := chi.URLParam(req, "name")
 		if v, ok := counterStorage.Get(name); !ok {
 			w.WriteHeader(http.StatusNotFound)
-			return
 		} else {
 			w.Write([]byte(fmt.Sprintf("%v", v)))
 		}
-		w.WriteHeader(http.StatusOK)
 	}
 }
 

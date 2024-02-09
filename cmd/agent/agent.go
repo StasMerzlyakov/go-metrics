@@ -17,7 +17,7 @@ func main() {
 
 	flag.StringVar(&agentCfg.ServerAddr, "a", "localhost:8080", "serverAddress")
 	flag.IntVar(&agentCfg.PollInterval, "p", 2, "poolInterval in seconds")
-	flag.IntVar(&agentCfg.ReportInterval, "r", 10, "poolInterval in seconds")
+	flag.IntVar(&agentCfg.ReportInterval, "r", 10, "reportInterval in seconds")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()

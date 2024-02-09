@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"strings"
@@ -11,6 +12,7 @@ func NewHTTPResultSender(serverAdd string) ResultSender {
 	if !strings.HasPrefix(serverAdd, "http") {
 		serverAdd = "http://" + serverAdd
 	}
+	serverAdd = strings.TrimSuffix(serverAdd, "/")
 	return &httpResultSender{
 		serverAdd: serverAdd,
 	}
@@ -26,8 +28,9 @@ func (h *httpResultSender) initIfNecessary() {
 	h.sm.Lock()
 	defer h.sm.Unlock()
 	if h.client == nil {
-		h.client = resty.New()
-		h.serverAdd = strings.TrimSuffix(h.serverAdd, "/")
+		h.client = resty.New().
+			// Иногда возникает ошибка EOF или http: server closed idle connection; добавим Retry
+			SetRetryCount(3)
 	}
 }
 
@@ -40,6 +43,11 @@ func (h *httpResultSender) store(metricType string, metricName string, value str
 			"metricName": metricName,
 			"value":      value,
 		}).Post(h.serverAdd + "/update/{metricType}/{metricName}/{value}")
+
+	if err != nil {
+		fmt.Printf("%v\n", errors.Unwrap(err))
+	}
+
 	return err
 }
 
