@@ -19,10 +19,10 @@ func CreateServerHandler() http.Handler {
 	gaugeStorage := storage.NewMemoryFloat64Storage()
 	metricController := NewMetricController(counterStorage, gaugeStorage)
 	businessHandler := NewBusinessHandler(metricController)
-	return CreateFullHttpHandler(businessHandler)
+	return CreateFullHTTPHandler(businessHandler)
 }
 
-func CreateFullHttpHandler(businessHandler BusinessHandler) http.Handler {
+func CreateFullHTTPHandler(businessHandler BusinessHandler) http.Handler {
 
 	fullGaugeHandler := CreateFullPostGaugeHandler(businessHandler.PostGauge)
 	fullCounterHandler := CreateFullPostCounterHandler(businessHandler.PostCounter)

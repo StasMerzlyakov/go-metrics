@@ -32,7 +32,7 @@ func (*mockBusinessHandler) AllMetrics(w http.ResponseWriter, request *http.Requ
 
 func TestServerMiddlewareChain(t *testing.T) {
 	mockBusinessHandler := &mockBusinessHandler{}
-	serverHandler := CreateFullHttpHandler(mockBusinessHandler)
+	serverHandler := CreateFullHTTPHandler(mockBusinessHandler)
 
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()
