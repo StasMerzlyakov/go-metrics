@@ -1,27 +1,12 @@
 package server
 
 import (
-	"flag"
+	"net/http"
+
 	"github.com/StasMerzlyakov/go-metrics/internal"
 	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
-	"net/http"
 )
-
-type Configuration struct {
-	url string
-}
-
-func (c *Configuration) String() string {
-	return c.url
-}
-
-func (c *Configuration) Set(s string) error {
-	c.url = s
-	return nil
-}
-
-var _ flag.Value = (*Configuration)(nil)
 
 func CreateServer(config *Configuration) error {
 	counterStorage := storage.NewMemoryInt64Storage()
@@ -37,7 +22,8 @@ func CreateServer(config *Configuration) error {
 		CounterPostHandler(counterPostHandler).
 		CounterGetHandler(counterGetHandler).
 		AllMetricsHandler(allMetricsHandler).Build()
-	return http.ListenAndServe(config.url, serverHandler)
+	server := &http.Server{Addr: config.url, Handler: serverHandler, ReadTimeout: 0, IdleTimeout: 0}
+	return server.ListenAndServe()
 }
 
 var Builder = &handlerConfigurationBuilder{}

@@ -2,13 +2,14 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 const textPlaint = "text/plain; charset=utf-8"

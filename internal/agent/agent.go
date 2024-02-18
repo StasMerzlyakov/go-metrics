@@ -3,16 +3,11 @@ package agent
 import (
 	"context"
 	"fmt"
-	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 	"sync"
 	"time"
-)
 
-type Configuration struct {
-	ServerAddr     string `env:"ADDRESS"`
-	PollInterval   int    `env:"POLL_INTERVAL"`
-	ReportInterval int    `env:"REPORT_INTERVAL"`
-}
+	"github.com/StasMerzlyakov/go-metrics/internal/storage"
+)
 
 type Agent interface {
 	Wait()

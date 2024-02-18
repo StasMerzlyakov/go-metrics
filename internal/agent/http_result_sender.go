@@ -3,9 +3,10 @@ package agent
 import (
 	"errors"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"strings"
 	"sync"
+
+	"github.com/go-resty/resty/v2"
 )
 
 func NewHTTPResultSender(serverAdd string) ResultSender {

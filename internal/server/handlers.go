@@ -2,12 +2,14 @@ package server
 
 import (
 	"fmt"
+	"html/template"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/StasMerzlyakov/go-metrics/internal"
 	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
-	"html/template"
-	"net/http"
-	"strings"
 )
 
 func CreateFullPostCounterHandler(counterHandler http.HandlerFunc) http.HandlerFunc {
@@ -86,6 +88,7 @@ func CheckMetricNameMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 func GaugePostHandlerCreator(storage storage.MetricsStorage[float64]) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		_, _ = io.ReadAll(req.Body)
 		name := chi.URLParam(req, "name")
 		valueStr := chi.URLParam(req, "value")
 		value, err := ExtractFloat64(valueStr)
@@ -112,6 +115,7 @@ func GaugeGetHandlerCreator(gaugeStorage storage.MetricsStorage[float64]) http.H
 
 func CounterPostHandlerCreator(storage storage.MetricsStorage[int64]) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		_, _ = io.ReadAll(req.Body)
 		name := chi.URLParam(req, "name")
 		valueStr := chi.URLParam(req, "value")
 		value, err := ExtractInt64(valueStr)
