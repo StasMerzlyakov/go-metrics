@@ -1,34 +1,9 @@
 package server
 
 import (
-	"fmt"
-	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 	"regexp"
 	"strconv"
 )
-
-func GetAllMetrics(counterStorage storage.MetricsStorage[int64],
-	gaugeStorage storage.MetricsStorage[float64]) MetricModel {
-	items := MetricModel{}
-	for _, k := range counterStorage.Keys() {
-		v, _ := counterStorage.Get(k)
-		items.Items = append(items.Items, MetricsData{
-			"counter",
-			k,
-			fmt.Sprintf("%v", v),
-		})
-	}
-
-	for _, k := range gaugeStorage.Keys() {
-		v, _ := gaugeStorage.Get(k)
-		items.Items = append(items.Items, MetricsData{
-			"counter",
-			k,
-			fmt.Sprintf("%v", v),
-		})
-	}
-	return items
-}
 
 var decimalRegexp = regexp.MustCompile("^[-+]?([1-9][0-9]*|0?)([.][0-9]*)?$")
 

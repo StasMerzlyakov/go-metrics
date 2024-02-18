@@ -9,75 +9,25 @@ import (
 )
 
 func CreateServer(config *Configuration) error {
-	counterStorage := storage.NewMemoryInt64Storage()
-	gaugeStorage := storage.NewMemoryFloat64Storage()
-	gaugePostHandler := GaugePostHandlerCreator(gaugeStorage)
-	counterPostHandler := CounterPostHandlerCreator(counterStorage)
-	allMetricsHandler := AllMetricsViewHandlerCreator(counterStorage, gaugeStorage)
-	gaugeGetHandler := GaugeGetHandlerCreator(gaugeStorage)
-	counterGetHandler := CounterGetHandlerCreator(counterStorage)
-	serverHandler := Builder.NewConfigurationBuilder().
-		GaugePostHandler(gaugePostHandler).
-		GaugeGetHandler(gaugeGetHandler).
-		CounterPostHandler(counterPostHandler).
-		CounterGetHandler(counterGetHandler).
-		AllMetricsHandler(allMetricsHandler).Build()
+	serverHandler := CreateServerHandler()
 	server := &http.Server{Addr: config.url, Handler: serverHandler, ReadTimeout: 0, IdleTimeout: 0}
 	return server.ListenAndServe()
 }
 
-var Builder = &handlerConfigurationBuilder{}
-
-type handlerConfigurationBuilder struct{}
-
-func (b *handlerConfigurationBuilder) NewConfigurationBuilder() *handlerConfiguration {
-	return &handlerConfiguration{
-		allMetricsHandler:  DefaultHandler,
-		gaugeGetHandler:    DefaultHandler,
-		gaugePostHandler:   DefaultHandler,
-		counterGetHandler:  DefaultHandler,
-		counterPostHandler: DefaultHandler,
-	}
+func CreateServerHandler() http.Handler {
+	counterStorage := storage.NewMemoryInt64Storage()
+	gaugeStorage := storage.NewMemoryFloat64Storage()
+	metricController := NewMetricController(counterStorage, gaugeStorage)
+	businessHandler := NewBusinessHandler(metricController)
+	return CreateFullHttpHandler(businessHandler)
 }
 
-type handlerConfiguration struct {
-	allMetricsHandler  http.HandlerFunc
-	gaugePostHandler   http.HandlerFunc
-	counterPostHandler http.HandlerFunc
-	gaugeGetHandler    http.HandlerFunc
-	counterGetHandler  http.HandlerFunc
-}
+func CreateFullHttpHandler(businessHandler BusinessHandler) http.Handler {
 
-func (hCfg *handlerConfiguration) AllMetricsHandler(handler http.HandlerFunc) *handlerConfiguration {
-	hCfg.allMetricsHandler = handler
-	return hCfg
-}
-
-func (hCfg *handlerConfiguration) GaugePostHandler(handler http.HandlerFunc) *handlerConfiguration {
-	hCfg.gaugePostHandler = handler
-	return hCfg
-}
-
-func (hCfg *handlerConfiguration) CounterPostHandler(handler http.HandlerFunc) *handlerConfiguration {
-	hCfg.counterPostHandler = handler
-	return hCfg
-}
-
-func (hCfg *handlerConfiguration) GaugeGetHandler(handler http.HandlerFunc) *handlerConfiguration {
-	hCfg.gaugeGetHandler = handler
-	return hCfg
-}
-
-func (hCfg *handlerConfiguration) CounterGetHandler(handler http.HandlerFunc) *handlerConfiguration {
-	hCfg.counterGetHandler = handler
-	return hCfg
-}
-
-func (hCfg *handlerConfiguration) Build() http.Handler {
-	fullGaugeHandler := CreateFullPostGaugeHandler(hCfg.gaugePostHandler)
-	fullCounterHandler := CreateFullPostCounterHandler(hCfg.counterPostHandler)
+	fullGaugeHandler := CreateFullPostGaugeHandler(businessHandler.PostGauge)
+	fullCounterHandler := CreateFullPostCounterHandler(businessHandler.PostCounter)
 	r := chi.NewRouter()
-	r.Get("/", hCfg.allMetricsHandler)
+	r.Get("/", businessHandler.AllMetrics)
 	r.Post("/update/gauge/{name}/{value}", fullGaugeHandler)
 
 	r.Route("/update", func(r chi.Router) {
@@ -88,8 +38,8 @@ func (hCfg *handlerConfiguration) Build() http.Handler {
 	})
 
 	r.Route("/value", func(r chi.Router) {
-		r.Get("/gauge/{name}", hCfg.gaugeGetHandler)
-		r.Get("/counter/{name}", hCfg.counterGetHandler)
+		r.Get("/gauge/{name}", businessHandler.GetGauge)
+		r.Get("/counter/{name}", businessHandler.GetCounter)
 	})
 	return r
 }
