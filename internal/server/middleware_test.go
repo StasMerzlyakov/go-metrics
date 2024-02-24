@@ -30,9 +30,14 @@ func (*mockBusinessHandler) AllMetrics(w http.ResponseWriter, request *http.Requ
 	w.Header().Set("Content-Type", textPlaint)
 }
 
+type want struct {
+	code        int
+	contentType string
+}
+
 func TestServerMiddlewareChain(t *testing.T) {
 	mockBusinessHandler := &mockBusinessHandler{}
-	serverHandler := CreateFullHTTPHandler(mockBusinessHandler)
+	serverHandler := createHTTPHandler(mockBusinessHandler)
 
 	srv := httptest.NewServer(serverHandler)
 	defer srv.Close()

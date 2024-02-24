@@ -2,39 +2,34 @@ package server
 
 import (
 	"fmt"
-
-	"github.com/StasMerzlyakov/go-metrics/internal/storage"
 )
 
-type MetricController interface {
-	GetAllMetrics() MetricModel
-	GetCounter(name string) (int64, bool)
-	GetGaguge(name string) (float64, bool)
-	AddCounter(name string, value int64)
-	SetGauge(name string, value float64)
+type metricController struct {
+	counterStorage CounterStorage
+	gaugeStorage   GougeStorage
 }
 
-func NewMetricController(counterStorage storage.MetricsStorage[int64],
-	gaugeStorage storage.MetricsStorage[float64]) MetricController {
+type MemValue interface {
+	int64 | float64
+}
+
+type MetricsStorage[T MemValue] interface {
+	Set(key string, value T)
+	Add(key string, value T)
+	Get(key string) (T, bool)
+	Keys() []string
+}
+
+type CounterStorage MetricsStorage[int64]
+type GougeStorage MetricsStorage[float64]
+
+func NewMetricController(
+	counterStorage CounterStorage,
+	gaugeStorage GougeStorage) *metricController {
 	return &metricController{
 		counterStorage: counterStorage,
 		gaugeStorage:   gaugeStorage,
 	}
-}
-
-type MetricsData struct {
-	Type  string
-	Name  string
-	Value string
-}
-
-type MetricModel struct {
-	Items []MetricsData
-}
-
-type metricController struct {
-	counterStorage storage.MetricsStorage[int64]
-	gaugeStorage   storage.MetricsStorage[float64]
 }
 
 func (mc *metricController) GetAllMetrics() MetricModel {
@@ -42,7 +37,7 @@ func (mc *metricController) GetAllMetrics() MetricModel {
 	for _, k := range mc.counterStorage.Keys() {
 		v, _ := mc.counterStorage.Get(k)
 		items.Items = append(items.Items, MetricsData{
-			"counter",
+			CounterType,
 			k,
 			fmt.Sprintf("%v", v),
 		})
@@ -51,7 +46,7 @@ func (mc *metricController) GetAllMetrics() MetricModel {
 	for _, k := range mc.gaugeStorage.Keys() {
 		v, _ := mc.gaugeStorage.Get(k)
 		items.Items = append(items.Items, MetricsData{
-			"counter",
+			GaugeType,
 			k,
 			fmt.Sprintf("%v", v),
 		})

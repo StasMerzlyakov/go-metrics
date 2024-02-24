@@ -1,4 +1,4 @@
-package server
+package config
 
 import (
 	"flag"
@@ -6,23 +6,23 @@ import (
 	"os"
 )
 
-type Configuration struct {
-	url string
+type ServerConfiguration struct {
+	Url string
 }
 
-func (c *Configuration) String() string {
-	return c.url
+func (c *ServerConfiguration) String() string {
+	return c.Url
 }
 
-func (c *Configuration) Set(s string) error {
-	c.url = s
+func (c *ServerConfiguration) Set(s string) error {
+	c.Url = s
 	return nil
 }
 
-var _ flag.Value = (*Configuration)(nil)
+var _ flag.Value = (*ServerConfiguration)(nil)
 
-func LoadConfig() (*Configuration, error) {
-	srvConf := &Configuration{}
+func LoadServerConfig() (*ServerConfiguration, error) {
+	srvConf := &ServerConfiguration{}
 	srvConf.Set(":8080") // Значение по-умолчанию
 
 	flag.Var(srvConf, "a", "serverAddress")

@@ -6,29 +6,28 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/StasMerzlyakov/go-metrics/internal"
 	"github.com/go-chi/chi/v5"
 )
 
-type BusinessHandler interface {
-	PostGauge(w http.ResponseWriter, req *http.Request)
-	GetGauge(w http.ResponseWriter, req *http.Request)
-	PostCounter(w http.ResponseWriter, req *http.Request)
-	GetCounter(w http.ResponseWriter, req *http.Request)
-	AllMetrics(w http.ResponseWriter, request *http.Request)
+type MetricController interface {
+	GetAllMetrics() MetricModel
+	GetCounter(name string) (int64, bool)
+	GetGaguge(name string) (float64, bool)
+	AddCounter(name string, value int64)
+	SetGauge(name string, value float64)
 }
 
-func NewBusinessHandler(metricController MetricController) BusinessHandler {
-	return &handler{
+func NewHttpAdapterHandler(metricController MetricController) *httpAdapter {
+	return &httpAdapter{
 		metricController: metricController,
 	}
 }
 
-type handler struct {
+type httpAdapter struct {
 	metricController MetricController
 }
 
-func (h *handler) PostGauge(w http.ResponseWriter, req *http.Request) {
+func (h *httpAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	name := chi.URLParam(req, "name")
 	valueStr := chi.URLParam(req, "value")
@@ -40,7 +39,7 @@ func (h *handler) PostGauge(w http.ResponseWriter, req *http.Request) {
 	h.metricController.SetGauge(name, value)
 }
 
-func (h *handler) GetGauge(w http.ResponseWriter, req *http.Request) {
+func (h *httpAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	name := chi.URLParam(req, "name")
 	if v, ok := h.metricController.GetGaguge(name); !ok {
@@ -51,7 +50,7 @@ func (h *handler) GetGauge(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *handler) PostCounter(w http.ResponseWriter, req *http.Request) {
+func (h *httpAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	name := chi.URLParam(req, "name")
 	valueStr := chi.URLParam(req, "value")
@@ -63,7 +62,7 @@ func (h *handler) PostCounter(w http.ResponseWriter, req *http.Request) {
 	h.metricController.AddCounter(name, value)
 }
 
-func (h *handler) GetCounter(w http.ResponseWriter, req *http.Request) {
+func (h *httpAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	name := chi.URLParam(req, "name")
 	if v, ok := h.metricController.GetCounter(name); !ok {
@@ -73,7 +72,7 @@ func (h *handler) GetCounter(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *handler) AllMetrics(w http.ResponseWriter, request *http.Request) {
+func (h *httpAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
 	metrics := h.metricController.GetAllMetrics()
 	allMetricsViewTmpl.Execute(w, metrics)
 }
@@ -98,23 +97,3 @@ var allMetricsViewTmpl, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
 </body>
 </html>
 `)
-
-func CreateFullPostCounterHandler(counterHandler http.HandlerFunc) http.HandlerFunc {
-	return internal.Conveyor(
-		counterHandler,
-		CheckIntegerMiddleware,
-		CheckMetricNameMiddleware,
-		CheckContentTypeMiddleware,
-		CheckMethodPostMiddleware,
-	)
-}
-
-func CreateFullPostGaugeHandler(gaugeHandler http.HandlerFunc) http.HandlerFunc {
-	return internal.Conveyor(
-		gaugeHandler,
-		CheckDigitalMiddleware,
-		CheckMetricNameMiddleware,
-		CheckContentTypeMiddleware,
-		CheckMethodPostMiddleware,
-	)
-}

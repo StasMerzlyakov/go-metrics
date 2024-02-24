@@ -22,7 +22,6 @@ type MetricStorage interface {
 func Create(config *config.AgentConfiguration,
 	resultSender ResultSender,
 	metricStorage MetricStorage,
-
 ) *agent {
 	agent := &agent{
 		metricStorage:     metricStorage,

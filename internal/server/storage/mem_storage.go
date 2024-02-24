@@ -2,15 +2,19 @@ package storage
 
 import "sync"
 
-func NewMemoryFloat64Storage() MetricsStorage[float64] {
+func NewMemoryFloat64Storage() *memStorage[float64] {
 	return &memStorage[float64]{}
 }
 
-func NewMemoryInt64Storage() MetricsStorage[int64] {
+func NewMemoryInt64Storage() *memStorage[int64] {
 	return &memStorage[int64]{}
 }
 
-type memStorage[T MemValue] struct {
+type memValue interface {
+	int64 | float64
+}
+
+type memStorage[T memValue] struct {
 	mtx     sync.Mutex
 	storage map[string]T
 }
