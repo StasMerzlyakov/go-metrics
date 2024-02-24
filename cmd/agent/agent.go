@@ -8,13 +8,27 @@ import (
 	"syscall"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
+	"github.com/StasMerzlyakov/go-metrics/internal/config"
 )
 
+type Agent interface {
+	Start(ctx context.Context)
+	Wait()
+}
+
 func main() {
-	agentCfg, err := agent.LoadConfig()
+	agentCfg, err := config.LoadAgentConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	metricStorage := agent.NewMemStatsStorage()
+	resultSender := agent.NewHTTPResultSender(agentCfg.ServerAddr)
+
+	agent := agent.Create(agentCfg,
+		resultSender,
+		metricStorage,
+	)
 
 	// Взято отсюда: "Реализация Graceful Shutdown в Go"(https://habr.com/ru/articles/771626/)
 	// Сейчас выглядит избыточным - оставил как задел на будущее для сервера
@@ -22,11 +36,10 @@ func main() {
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
 
-	if agent, err := agent.CreateAgent(ctx, agentCfg); err != nil {
-		panic(err)
-	} else {
-		<-exit
+	agent.Start(ctx)
+	defer func() {
 		cancel()
 		agent.Wait() // ожидаение завершения go-рутин в агенте
-	}
+	}()
+	<-exit
 }

@@ -2,88 +2,102 @@ package agent
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"sync"
 	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/storage"
+	"github.com/StasMerzlyakov/go-metrics/internal/config"
+	"github.com/sirupsen/logrus"
 )
 
-type Agent interface {
-	Wait()
+type ResultSender interface {
+	SendMetrics(metrics []Metric) error
 }
 
-func CreateAgent(ctx context.Context, config *Configuration) (Agent, error) {
+type MetricStorage interface {
+	Refresh() error
+	GetMetrics() []Metric
+}
+
+func Create(config *config.AgentConfiguration,
+	resultSender ResultSender,
+	metricStorage MetricStorage,
+
+) *agent {
 	agent := &agent{
-		metricsSource: NewRuntimeMetricsSource(),
-		resultSender:  NewHTTPResultSender(config.ServerAddr),
-		gaugeStorage:  storage.NewMemoryFloat64Storage(),
-		poolCounter:   0,
+		metricStorage:     metricStorage,
+		resultSender:      resultSender,
+		pollIntervalSec:   config.PollInterval,
+		reportIntervalSec: config.ReportInterval,
 	}
-	go agent.PoolMetrics(ctx, config.PollInterval)
-	go agent.ReportMetrics(ctx, config.ReportInterval)
-	agent.wg.Add(2)
-	return agent, nil
+
+	return agent
 }
 
 type agent struct {
-	metricsSource MetricsSource
-	resultSender  ResultSender
-	gaugeStorage  storage.MetricsStorage[float64]
-	poolCounter   int64
-	wg            sync.WaitGroup
+	metricStorage     MetricStorage
+	resultSender      ResultSender
+	pollIntervalSec   int
+	reportIntervalSec int
+	wg                sync.WaitGroup
 }
 
 func (a *agent) Wait() {
 	a.wg.Wait()
 }
 
-func (a *agent) PoolMetrics(ctx context.Context, pollIntervalSec int) {
-	counter := 0
+func (a *agent) Start(ctx context.Context) {
+	go a.poolMetrics(ctx)
+	go a.reportMetrics(ctx)
+	a.wg.Add(2)
+}
+
+func (a *agent) poolMetrics(ctx context.Context) {
+	var poolInterval time.Duration = time.Duration(a.pollIntervalSec) * time.Second
+
+	timer := time.NewTimer(poolInterval)
+	defer func() {
+		timer.Stop()
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("[%v] PoolMetrics DONE\n", time.Now())
+			logrus.Info("PoolMetrics DONE")
 			a.wg.Done()
 			return
-		default:
-			time.Sleep(1 * time.Second) // Будем просыпаться каждую секунду для проверки ctx
-			counter++
-			if counter == pollIntervalSec {
-				counter = 0
-				for k, v := range a.metricsSource.PollMetrics() {
-					a.gaugeStorage.Set(k, v)
-				}
-				a.poolCounter = a.metricsSource.PollCount()
-				fmt.Printf("[%v] PoolMetrics [SUCCESS] (poolCounter %v)\n", time.Now(), a.poolCounter)
+
+		case <-timer.C:
+			if err := a.metricStorage.Refresh(); err != nil {
+				logrus.Fatalf("PoolMetrics metrics error: %v", err)
 			}
+			logrus.Info("PoolMetrics SUCCESS")
 		}
 	}
 }
 
-func (a *agent) ReportMetrics(ctx context.Context, reportIntervalSec int) {
-	counter := 0
-MAIN:
+func (a *agent) reportMetrics(ctx context.Context) {
+
+	var reportInterval time.Duration = time.Duration(a.reportIntervalSec) * time.Second
+
+	timer := time.NewTimer(reportInterval)
+	defer func() {
+		timer.Stop()
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("[%v] ReportMetrics DONE\n", time.Now())
+			log.Println("ReportMetrics DONE")
 			a.wg.Done()
 			return
-		default:
-			time.Sleep(1 * time.Second) // Будем просыпаться каждую секунду для проверки ctx
-			counter++
-			if counter == reportIntervalSec {
-				counter = 0
-				for _, key := range a.gaugeStorage.Keys() {
-					val, _ := a.gaugeStorage.Get(key)
-					if err := a.resultSender.SendGauge(key, val); err != nil {
-						fmt.Printf("[%v] ReportMetrics [ERROR] (poolCounter %v)\n", time.Now(), err)
-						continue MAIN
-					}
-				}
-				_ = a.resultSender.SendCounter("PoolCount", a.poolCounter)
-				fmt.Printf("[%v] ReportMetrics [SUCCESS] (poolCounter %v)\n", time.Now(), a.poolCounter)
+		case <-timer.C:
+			metrics := a.metricStorage.GetMetrics()
+			err := a.resultSender.SendMetrics(metrics)
+			if err != nil {
+				log.Printf("ReportMetrics ERROR: %v\n", err)
+			} else {
+				logrus.Info("ReportMetrics SUCCESS")
 			}
 		}
 	}
