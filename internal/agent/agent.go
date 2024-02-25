@@ -52,7 +52,7 @@ func (a *agent) Start(ctx context.Context) {
 }
 
 func (a *agent) poolMetrics(ctx context.Context) {
-	var poolInterval time.Duration = time.Duration(a.pollIntervalSec) * time.Second
+	poolInterval := time.Duration(a.pollIntervalSec) * time.Second
 
 	for {
 		select {
@@ -71,8 +71,7 @@ func (a *agent) poolMetrics(ctx context.Context) {
 }
 
 func (a *agent) reportMetrics(ctx context.Context) {
-
-	var reportInterval time.Duration = time.Duration(a.reportIntervalSec) * time.Second
+	reportInterval := time.Duration(a.reportIntervalSec) * time.Second
 
 	for {
 		select {

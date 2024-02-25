@@ -41,7 +41,7 @@ func main() {
 		gougeStorage,
 	)
 
-	adapter := server.NewHttpAdapterHandler(controller, srvConf.Log)
+	adapter := server.NewHTTPAdapterHandler(controller, srvConf.Log)
 
 	mwList := createMWList(srvConf.Log)
 	var server Server = server.CreateMeterServer(srvConf, adapter, mwList...)

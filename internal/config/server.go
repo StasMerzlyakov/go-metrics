@@ -9,16 +9,16 @@ import (
 )
 
 type ServerConfiguration struct {
-	Url string
+	URL string
 	Log *zap.SugaredLogger
 }
 
 func (c *ServerConfiguration) String() string {
-	return c.Url
+	return c.URL
 }
 
 func (c *ServerConfiguration) Set(s string) error {
-	c.Url = s
+	c.URL = s
 	return nil
 }
 

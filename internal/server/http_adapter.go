@@ -19,7 +19,7 @@ type MetricController interface {
 	SetGauge(name string, value float64)
 }
 
-func NewHttpAdapterHandler(metricController MetricController, log *zap.SugaredLogger) *httpAdapter {
+func NewHTTPAdapterHandler(metricController MetricController, log *zap.SugaredLogger) *httpAdapter {
 	return &httpAdapter{
 		metricController: metricController,
 		logger:           log,

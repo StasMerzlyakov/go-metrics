@@ -13,30 +13,30 @@ import (
 
 const textPlaint = "text/plain; charset=utf-8"
 
-type mockHttpAdapter struct {
+type mockHTTPAdapter struct {
 	counterVal int64
 	gaugeVal   float64
 }
 
-func (httpAdapter *mockHttpAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {}
-func (httpAdapter *mockHttpAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
+func (httpAdapter *mockHTTPAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {}
+func (httpAdapter *mockHTTPAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf("%v", httpAdapter.gaugeVal)))
 }
-func (httpAdapter *mockHttpAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {}
-func (httpAdapter *mockHttpAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
+func (httpAdapter *mockHTTPAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {}
+func (httpAdapter *mockHTTPAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf("%v", httpAdapter.counterVal)))
 }
 
-func (httpAdapter *mockHttpAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
+func (httpAdapter *mockHTTPAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
 
 }
 
 func TestCounterValueHandler(t *testing.T) {
 	testValue := 123
 	testValueStr := fmt.Sprintf("%v", testValue)
-	handler := createHTTPHandler(&mockHttpAdapter{
+	handler := createHTTPHandler(&mockHTTPAdapter{
 		counterVal: int64(testValue),
 	})
 
@@ -67,7 +67,7 @@ func TestGaugeValueHandler(t *testing.T) {
 
 	testValue := 234.123
 	testValueStr := fmt.Sprintf("%v", testValue)
-	handler := createHTTPHandler(&mockHttpAdapter{
+	handler := createHTTPHandler(&mockHTTPAdapter{
 		gaugeVal: float64(testValue),
 	})
 	srv := httptest.NewServer(handler)

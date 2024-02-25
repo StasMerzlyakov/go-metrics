@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type HttpAdapter interface {
+type HTTPAdapter interface {
 	PostGauge(w http.ResponseWriter, req *http.Request)
 	GetGauge(w http.ResponseWriter, req *http.Request)
 	PostCounter(w http.ResponseWriter, req *http.Request)
@@ -19,13 +19,13 @@ type HttpAdapter interface {
 }
 
 func CreateMeterServer(config *config.ServerConfiguration,
-	httpAdapter HttpAdapter,
+	httpAdapter HTTPAdapter,
 	middlewares ...func(http.Handler) http.Handler,
 ) *meterServer {
 	return &meterServer{
 		sugar: config.Log,
 		srv: &http.Server{
-			Addr:        config.Url,
+			Addr:        config.URL,
 			Handler:     createHTTPHandler(httpAdapter, middlewares...),
 			ReadTimeout: 0,
 			IdleTimeout: 0,
@@ -58,7 +58,7 @@ func (s *meterServer) WaitDone() {
 	s.sugar.Infof("WaitDone")
 }
 
-func createHTTPHandler(httpAdapter HttpAdapter, middlewares ...func(http.Handler) http.Handler) http.Handler {
+func createHTTPHandler(httpAdapter HTTPAdapter, middlewares ...func(http.Handler) http.Handler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middlewares...)
