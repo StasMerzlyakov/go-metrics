@@ -4,10 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"go.uber.org/zap"
 )
 
 type ServerConfiguration struct {
 	Url string
+	Log *zap.SugaredLogger
 }
 
 func (c *ServerConfiguration) String() string {
@@ -21,8 +24,17 @@ func (c *ServerConfiguration) Set(s string) error {
 
 var _ flag.Value = (*ServerConfiguration)(nil)
 
-func LoadServerConfig() (*ServerConfiguration, error) {
-	srvConf := &ServerConfiguration{}
+func LoadServerConfig() *ServerConfiguration {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		// вызываем панику, если ошибка
+		panic("cannot initialize zap")
+	}
+	defer logger.Sync()
+
+	srvConf := &ServerConfiguration{
+		Log: logger.Sugar(),
+	}
 	srvConf.Set(":8080") // Значение по-умолчанию
 
 	flag.Var(srvConf, "a", "serverAddress")
@@ -37,5 +49,5 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 		srvConf.Set(addr)
 	}
 
-	return srvConf, nil
+	return srvConf
 }

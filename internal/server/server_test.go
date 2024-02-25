@@ -7,8 +7,11 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const textPlaint = "text/plain; charset=utf-8"
 
 type mockHttpAdapter struct {
 	counterVal int64
@@ -57,6 +60,7 @@ func TestCounterValueHandler(t *testing.T) {
 	require.Nil(t, err)
 	respBody := string(resp.Body())
 	require.Equal(t, testValueStr, respBody)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
 func TestGaugeValueHandler(t *testing.T) {
@@ -84,4 +88,5 @@ func TestGaugeValueHandler(t *testing.T) {
 	require.Nil(t, err)
 	respBody := string(resp.Body())
 	require.Equal(t, testValueStr, respBody) // Не попасть бы на потерю точности string -> float64 -> string
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }

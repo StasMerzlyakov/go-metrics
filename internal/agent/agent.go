@@ -54,11 +54,6 @@ func (a *agent) Start(ctx context.Context) {
 func (a *agent) poolMetrics(ctx context.Context) {
 	var poolInterval time.Duration = time.Duration(a.pollIntervalSec) * time.Second
 
-	timer := time.NewTimer(poolInterval)
-	defer func() {
-		timer.Stop()
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -66,7 +61,7 @@ func (a *agent) poolMetrics(ctx context.Context) {
 			a.wg.Done()
 			return
 
-		case <-timer.C:
+		case <-time.After(poolInterval):
 			if err := a.metricStorage.Refresh(); err != nil {
 				logrus.Fatalf("PoolMetrics metrics error: %v", err)
 			}
@@ -79,18 +74,13 @@ func (a *agent) reportMetrics(ctx context.Context) {
 
 	var reportInterval time.Duration = time.Duration(a.reportIntervalSec) * time.Second
 
-	timer := time.NewTimer(reportInterval)
-	defer func() {
-		timer.Stop()
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
 			log.Println("ReportMetrics DONE")
 			a.wg.Done()
 			return
-		case <-timer.C:
+		case <-time.After(reportInterval):
 			metrics := a.metricStorage.GetMetrics()
 			err := a.resultSender.SendMetrics(metrics)
 			if err != nil {

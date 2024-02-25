@@ -19,14 +19,14 @@ type HttpAdapter interface {
 }
 
 func CreateMeterServer(config *config.ServerConfiguration,
-	logger *zap.Logger,
 	httpAdapter HttpAdapter,
+	middlewares ...func(http.Handler) http.Handler,
 ) *meterServer {
 	return &meterServer{
-		sugar: logger.Sugar(),
+		sugar: config.Log,
 		srv: &http.Server{
 			Addr:        config.Url,
-			Handler:     createHTTPHandler(httpAdapter),
+			Handler:     createHTTPHandler(httpAdapter, middlewares...),
 			ReadTimeout: 0,
 			IdleTimeout: 0,
 		},
@@ -49,26 +49,27 @@ func (s *meterServer) Start(startContext context.Context) {
 			s.sugar.Fatalf("ListenAndServe(): %v", err)
 		}
 	}()
+	s.sugar.Infof("Server started")
 }
 
 func (s *meterServer) WaitDone() {
 	s.srv.Shutdown(s.startContext)
 	s.wg.Wait()
-	s.sugar.Infof("server complete")
+	s.sugar.Infof("WaitDone")
 }
 
-func createHTTPHandler(httpAdapter HttpAdapter) http.Handler {
-
-	fullGaugeHandler := createFullPostGaugeHandler(httpAdapter.PostGauge)
-	fullCounterHandler := createFullPostCounterHandler(httpAdapter.PostCounter)
+func createHTTPHandler(httpAdapter HttpAdapter, middlewares ...func(http.Handler) http.Handler) http.Handler {
 	r := chi.NewRouter()
+
+	r.Use(middlewares...)
+
 	r.Get("/", httpAdapter.AllMetrics)
-	r.Post("/update/gauge/{name}/{value}", fullGaugeHandler)
 
 	r.Route("/update", func(r chi.Router) {
-		r.Post("/gauge/{name}/{value}", fullGaugeHandler)
+		r.Post("/gauge/{name}/{value}", httpAdapter.PostGauge)
 		r.Post("/gauge/{name}", StatusNotFound)
-		r.Post("/counter/{name}/{value}", fullCounterHandler)
+		r.Post("/counter/{name}/{value}", httpAdapter.PostCounter)
+		r.Post("/counter/{name}", StatusNotFound)
 		r.Post("/{type}/{name}/{value}", StatusNotImplemented)
 	})
 
@@ -77,24 +78,4 @@ func createHTTPHandler(httpAdapter HttpAdapter) http.Handler {
 		r.Get("/counter/{name}", httpAdapter.GetCounter)
 	})
 	return r
-}
-
-func createFullPostCounterHandler(counterHandler http.HandlerFunc) http.HandlerFunc {
-	return Conveyor(
-		counterHandler,
-		CheckIntegerMiddleware,
-		CheckMetricNameMiddleware,
-		CheckContentTypeMiddleware,
-		CheckMethodPostMiddleware,
-	)
-}
-
-func createFullPostGaugeHandler(gaugeHandler http.HandlerFunc) http.HandlerFunc {
-	return Conveyor(
-		gaugeHandler,
-		CheckDigitalMiddleware,
-		CheckMetricNameMiddleware,
-		CheckContentTypeMiddleware,
-		CheckMethodPostMiddleware,
-	)
 }

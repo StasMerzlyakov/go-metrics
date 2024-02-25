@@ -8,6 +8,7 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/storage"
 	"go.uber.org/zap"
 )
@@ -17,21 +18,22 @@ type Server interface {
 	WaitDone()
 }
 
+func createMWList(log *zap.SugaredLogger) []middleware.MWHandlerFn {
+	logResponsMW := middleware.NewLogResponseMW(log)
+	logRequestMW := middleware.NewLogRequestMW(log)
+
+	return []middleware.MWHandlerFn{
+		logRequestMW,
+		logResponsMW,
+	}
+}
+
 func main() {
 
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		// вызываем панику, если ошибка
-		panic("cannot initialize zap")
-	}
-	defer logger.Sync()
+	// Конфигурация
+	srvConf := config.LoadServerConfig()
 
-	srvConf, err := config.LoadServerConfig()
-	if err != nil {
-		logger.Sugar().Fatalf("configuration error", "err", err.Error())
-		panic("configuration error")
-	}
-
+	// Сборка сервера
 	counterStorage := storage.NewMemoryInt64Storage()
 	gougeStorage := storage.NewMemoryFloat64Storage()
 	controller := server.NewMetricController(
@@ -39,10 +41,12 @@ func main() {
 		gougeStorage,
 	)
 
-	adapter := server.NewHttpAdapterHandler(controller)
+	adapter := server.NewHttpAdapterHandler(controller, srvConf.Log)
 
-	var server Server = server.CreateMeterServer(srvConf, logger, adapter)
+	mwList := createMWList(srvConf.Log)
+	var server Server = server.CreateMeterServer(srvConf, adapter, mwList...)
 
+	// Запуск сервера
 	ctx, cancelFn := context.WithCancel(context.Background())
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
