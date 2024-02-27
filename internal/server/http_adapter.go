@@ -157,7 +157,7 @@ var allMetricsViewTmpl, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
 </html>
 `)
 
-func (h *httpAdapter) checkJsonInput(w http.ResponseWriter, req *http.Request) (*Metrics, bool) {
+func (h *httpAdapter) checkJSONInput(w http.ResponseWriter, req *http.Request) (*Metrics, bool) {
 	// Проверка content-type
 	contentType := req.Header.Get("Content-Type")
 	if contentType != "" && !strings.HasPrefix(contentType, applicationJSON) {
@@ -186,7 +186,7 @@ func (h *httpAdapter) checkJsonInput(w http.ResponseWriter, req *http.Request) (
 
 func (h *httpAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
 
-	if metrics, ok := h.checkJsonInput(w, req); ok {
+	if metrics, ok := h.checkJSONInput(w, req); ok {
 		if metrics.MType == "gauge" {
 			if metrics.Value == nil {
 				h.logger.Infoln("err", "gague value is nil")
@@ -235,7 +235,7 @@ func (h *httpAdapter) sendMetrics(w http.ResponseWriter, req *http.Request, metr
 }
 
 func (h *httpAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
-	if metrics, ok := h.checkJsonInput(w, req); ok {
+	if metrics, ok := h.checkJSONInput(w, req); ok {
 		if metrics.MType == "gauge" {
 			value, ok := h.metricController.GetGaguge(metrics.ID)
 			if !ok {
