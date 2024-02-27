@@ -57,12 +57,6 @@ func (h *httpAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
 
 	// Проверка допустимости значения параметра
 	valueStr := chi.URLParam(req, "value")
-	if !CheckDecimal(valueStr) {
-		h.logger.Infoln("err", fmt.Sprintf("wrong decimal value: %v", valueStr))
-		http.Error(w, "wrong decimal value", http.StatusBadRequest)
-		return
-	}
-
 	value, err := ExtractFloat64(valueStr)
 	if err != nil {
 		h.logger.Infoln("err", err.Error())
@@ -105,11 +99,6 @@ func (h *httpAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
 
 	// Проверка допустимости значения
 	valueStr := chi.URLParam(req, "value")
-	if !CheckInteger(valueStr) {
-		h.logger.Infoln("err", fmt.Sprintf("wrong integer value: %v", valueStr))
-		http.Error(w, "wrong integer value", http.StatusBadRequest)
-		return
-	}
 
 	value, err := ExtractInt64(valueStr)
 	if err != nil {

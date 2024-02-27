@@ -7,18 +7,6 @@ import (
 	"strconv"
 )
 
-var decimalRegexp = regexp.MustCompile("^[-+]?([1-9][0-9]*|0?)([.][0-9]*)?$")
-
-func CheckDecimal(value string) bool {
-	return decimalRegexp.MatchString(value)
-}
-
-var integerRegexp = regexp.MustCompile("^[-+]?([1-9][0-9]*|0?)$")
-
-func CheckInteger(value string) bool {
-	return integerRegexp.MatchString(value)
-}
-
 var nameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")
 
 func CheckName(value string) bool {

@@ -40,6 +40,14 @@ func TestExtractFloat64(t *testing.T) {
 				false,
 			},
 		},
+		{
+			"good value",
+			"1.8070544e+07",
+			extractFloat64Result{
+				18070544,
+				true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -92,146 +100,6 @@ func TestExtractInt64(t *testing.T) {
 			value, err := ExtractInt64(tt.input)
 			assert.Equal(t, tt.result.value, value)
 			assert.Equal(t, tt.result.isSuccessExpected, err == nil)
-		})
-	}
-}
-
-func TestCheckDecimal(t *testing.T) {
-	testCases := []struct {
-		name   string
-		input  string
-		result bool
-	}{
-		{
-			"TestCheckDecimal_1",
-			"a1s_asd1_1",
-			false,
-		},
-		{
-			"TestCheckDecimal_2",
-			"00.123",
-			false,
-		},
-		{
-			"TestCheckDecimal_3",
-			"0.123",
-			true,
-		},
-		{
-			"TestCheckDecimal_4",
-			"-0.123",
-			true,
-		},
-		{
-			"TestCheckDecimal_5",
-			"0.123",
-			true,
-		},
-		{
-			"TestCheckDecimal_6",
-			"0.123",
-			true,
-		},
-		{
-			"TestCheckDecimal_7",
-			"0.123",
-			true,
-		},
-		{
-			"TestCheckDecimal_8",
-			"123",
-			true,
-		},
-		{
-			"TestCheckDecimal_9",
-			"-123",
-			true,
-		},
-		{
-			"TestCheckDecimal_10",
-			"123.",
-			true,
-		},
-		{
-			"TestCheckDecimal_11",
-			"123.123.1",
-			false,
-		},
-		{
-			"TestCheckDecimal_12",
-			"123.123.",
-			false,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.result, CheckDecimal(test.input))
-		})
-	}
-}
-
-func TestCheckInteger(t *testing.T) {
-	testCases := []struct {
-		name   string
-		input  string
-		result bool
-	}{
-		{
-			"TestCheckInteger_1",
-			"a1s_asd1_1",
-			false,
-		},
-		{
-			"TestCheckInteger_2",
-			"00.123",
-			false,
-		},
-		{
-			"TestCheckInteger_3",
-			"0.123",
-			false,
-		},
-		{
-			"TestCheckInteger_4",
-			"-0.123",
-			false,
-		},
-		{
-			"TestCheckInteger_5",
-			"0.123",
-			false,
-		},
-		{
-			"TestCheckInteger_6",
-			"123",
-			true,
-		},
-		{
-			"TestCheckInteger_7",
-			"-123",
-			true,
-		},
-		{
-			"TestCheckInteger_8",
-			"123.",
-			false,
-		},
-		{
-			"TestCheckInteger_9",
-			"123.123.1",
-			false,
-		},
-		{
-			"TestCheckInteger_10",
-			"123.123.",
-			false,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.result, CheckInteger(test.input))
 		})
 	}
 }
