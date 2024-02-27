@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/sirupsen/logrus v1.9.3
