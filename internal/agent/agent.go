@@ -46,26 +46,26 @@ func (a *agent) Wait() {
 }
 
 func (a *agent) Start(ctx context.Context) {
-	go a.poolMetrics(ctx)
+	go a.pollMetrics(ctx)
 	go a.reportMetrics(ctx)
 	a.wg.Add(2)
 }
 
-func (a *agent) poolMetrics(ctx context.Context) {
-	poolInterval := time.Duration(a.pollIntervalSec) * time.Second
+func (a *agent) pollMetrics(ctx context.Context) {
+	pollInterval := time.Duration(a.pollIntervalSec) * time.Second
 
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Info("PoolMetrics DONE")
+			logrus.Info("PollMetrics DONE")
 			a.wg.Done()
 			return
 
-		case <-time.After(poolInterval):
+		case <-time.After(pollInterval):
 			if err := a.metricStorage.Refresh(); err != nil {
-				logrus.Fatalf("PoolMetrics metrics error: %v", err)
+				logrus.Fatalf("PollMetrics metrics error: %v", err)
 			}
-			logrus.Info("PoolMetrics SUCCESS")
+			logrus.Info("PollMetrics SUCCESS")
 		}
 	}
 }

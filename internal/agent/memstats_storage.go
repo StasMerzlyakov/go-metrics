@@ -66,12 +66,12 @@ func (m *memStatsSource) GetMetrics() []Metric {
 		metrics = append(metrics, metric)
 	}
 
-	poolCountMetric := Metric{
-		Name:  "PoolCount",
+	pollCountMetric := Metric{
+		Name:  "PollCount",
 		Type:  CounterType,
 		Value: fmt.Sprintf("%v", m.poolCounter),
 	}
 
-	metrics = append(metrics, poolCountMetric)
+	metrics = append(metrics, pollCountMetric)
 	return metrics
 }
