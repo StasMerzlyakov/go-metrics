@@ -37,6 +37,7 @@ func (h *httpResultSender) SendMetrics(metrics []Metrics) error {
 func (h *httpResultSender) store(metric Metrics) error {
 	_, err := h.client.R().
 		SetHeader("Content-Type", "application/json; charset=UTF-8").
+		SetHeader("Content-Encoding", "gzip").
 		SetBody(metric).Post(h.serverAdd + "/update/")
 	return err
 }

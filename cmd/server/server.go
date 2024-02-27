@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/storage"
 	"go.uber.org/zap"
 )
@@ -18,13 +19,13 @@ type Server interface {
 	WaitDone()
 }
 
-func createMWList(log *zap.SugaredLogger) []middleware.MWHandlerFn {
-	logResponsMW := middleware.NewLogResponseMW(log)
-	logRequestMW := middleware.NewLogRequestMW(log)
+func createMWList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
+	loggingResponseMW := logging.NewLoggingResponseMW(log)
+	loggingRequestMW := logging.NewLoggingRequestMW(log)
 
-	return []middleware.MWHandlerFn{
-		logRequestMW,
-		logResponsMW,
+	return []func(http.Handler) http.Handler{
+		loggingRequestMW,
+		loggingResponseMW,
 	}
 }
 

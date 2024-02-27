@@ -1,8 +1,9 @@
-package middleware
+package logging
 
 import (
 	"net/http"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +34,7 @@ func (lw *loggingResponseWriter) WriteHeader(statusCode int) {
 	lw.responseData.status = statusCode
 }
 
-func NewLogResponseMW(log *zap.SugaredLogger) MWHandlerFn {
+func NewLoggingResponseMW(log *zap.SugaredLogger) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		lrw := func(w http.ResponseWriter, r *http.Request) {
 			lw := &loggingResponseWriter{

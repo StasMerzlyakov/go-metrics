@@ -8,6 +8,7 @@ require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
+	github.com/ungerik/go-pool v0.0.0-20140720100922-d102a2c7872a
 	go.uber.org/zap v1.27.0
 )
 

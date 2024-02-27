@@ -1,13 +1,14 @@
-package middleware
+package logging
 
 import (
 	"net/http"
 	"time"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
 	"go.uber.org/zap"
 )
 
-func NewLogRequestMW(log *zap.SugaredLogger) MWHandlerFn {
+func NewLoggingRequestMW(log *zap.SugaredLogger) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		logReqFn := func(w http.ResponseWriter, req *http.Request) {
 			start := time.Now()
