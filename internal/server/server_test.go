@@ -32,12 +32,12 @@ func (httpAdapter *mockHTTPAdapter) AllMetrics(w http.ResponseWriter, request *h
 }
 
 func (httpAdapter *mockHTTPAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", applicationJson)
+	w.Header().Set("Content-Type", applicationJSON)
 	w.WriteHeader(http.StatusOK)
 }
 
 func (httpAdapter *mockHTTPAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", applicationJson)
+	w.Header().Set("Content-Type", applicationJSON)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -51,12 +51,12 @@ func TestPostUpdate(t *testing.T) {
 	req.Method = http.MethodPost
 
 	req.URL = srv.URL + "/update/"
-	req.Header.Add("Content-Type", applicationJson)
+	req.Header.Add("Content-Type", applicationJSON)
 	_, err := req.Send()
 	require.Nil(t, err)
 
 	req.URL = srv.URL + "/value/"
-	req.Header.Add("Content-Type", applicationJson)
+	req.Header.Add("Content-Type", applicationJSON)
 	_, err = req.Send()
 	assert.Nil(t, err)
 }

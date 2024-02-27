@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	applicationJson = "application/json"
+	applicationJSON = "application/json"
 	textPlain       = "text/plain"
 )
 
@@ -160,7 +160,7 @@ var allMetricsViewTmpl, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
 func (h *httpAdapter) checkJsonInput(w http.ResponseWriter, req *http.Request) (*Metrics, bool) {
 	// Проверка content-type
 	contentType := req.Header.Get("Content-Type")
-	if contentType != "" && !strings.HasPrefix(contentType, applicationJson) {
+	if contentType != "" && !strings.HasPrefix(contentType, applicationJSON) {
 		h.logger.Infoln("err", fmt.Sprintf("unexpected content-type: %v", contentType))
 		http.Error(w, "only 'text/plain' supported", http.StatusUnsupportedMediaType)
 		return nil, false
@@ -224,7 +224,7 @@ func (h *httpAdapter) sendMetrics(w http.ResponseWriter, req *http.Request, metr
 			return
 		} */
 
-	w.Header().Set("Content-Type", applicationJson)
+	w.Header().Set("Content-Type", applicationJSON)
 	resp, err := json.Marshal(metrics)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

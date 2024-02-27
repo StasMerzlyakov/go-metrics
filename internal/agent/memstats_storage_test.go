@@ -38,7 +38,7 @@ func TestMemStatsSource(t *testing.T) {
 		"Sys":           GaugeType,
 		"TotalAlloc":    GaugeType,
 		"RandomValue":   GaugeType,
-		"PoolCount":     CounterType,
+		"PollCount":     CounterType,
 	}
 	err := mm.Refresh()
 	require.NoError(t, err)
@@ -53,18 +53,18 @@ func TestMemStatsSource(t *testing.T) {
 
 	require.Equal(t, len(expectedKeys), len(metrics))
 
-	var poolCount string
+	var pollCount string
 
 	for _, metric := range metrics {
 		mType, ok := expectedKeys[metric.Name]
 		require.Truef(t, ok, "pollMetrics doesn't contain key %v", metric.Name)
 		require.Equalf(t, mType, metric.Type, "pollMetrics contain key %v with different type", metric.Name)
 
-		if metric.Name == "PoolCount" {
-			poolCount = metric.Value
+		if metric.Name == "PollCount" {
+			pollCount = metric.Value
 		}
 
 	}
 
-	assert.Equal(t, "4", poolCount)
+	assert.Equal(t, "4", pollCount)
 }
