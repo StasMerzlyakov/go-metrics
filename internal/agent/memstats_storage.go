@@ -22,6 +22,7 @@ type memStatsSource struct {
 func (m *memStatsSource) Refresh() error {
 	defer atomic.AddInt64(&m.poolCounter, 1)
 	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
 	m.memStatStorage = map[string]float64{
 		"Alloc":         float64(memStats.Alloc),
 		"BuckHashSys":   float64(memStats.BuckHashSys),
