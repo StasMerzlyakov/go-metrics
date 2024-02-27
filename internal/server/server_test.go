@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const textPlaint = "text/plain; charset=utf-8"
-
 type mockHTTPAdapter struct {
 	counterVal int64
 	gaugeVal   float64
@@ -20,17 +18,47 @@ type mockHTTPAdapter struct {
 
 func (httpAdapter *mockHTTPAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {}
 func (httpAdapter *mockHTTPAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", textPlain)
 	w.Write([]byte(fmt.Sprintf("%v", httpAdapter.gaugeVal)))
 }
 func (httpAdapter *mockHTTPAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {}
 func (httpAdapter *mockHTTPAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", textPlain)
 	w.Write([]byte(fmt.Sprintf("%v", httpAdapter.counterVal)))
 }
 
 func (httpAdapter *mockHTTPAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
 
+}
+
+func (httpAdapter *mockHTTPAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", applicationJson)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (httpAdapter *mockHTTPAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", applicationJson)
+	w.WriteHeader(http.StatusOK)
+}
+
+func TestPostUpdate(t *testing.T) {
+	handler := createHTTPHandler(&mockHTTPAdapter{})
+
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	req := resty.New().R()
+	req.Method = http.MethodPost
+
+	req.URL = srv.URL + "/update/"
+	req.Header.Add("Content-Type", applicationJson)
+	_, err := req.Send()
+	require.Nil(t, err)
+
+	req.URL = srv.URL + "/value/"
+	req.Header.Add("Content-Type", applicationJson)
+	_, err = req.Send()
+	assert.Nil(t, err)
 }
 
 func TestCounterValueHandler(t *testing.T) {
@@ -47,14 +75,14 @@ func TestCounterValueHandler(t *testing.T) {
 	req.Method = http.MethodPost
 
 	req.URL = srv.URL + "/update/counter/TestCounter/" + testValueStr
-	req.Header.Add("Content-Type", textPlaint)
+	req.Header.Add("Content-Type", textPlain)
 	_, err := req.Send()
 	require.Nil(t, err)
 
 	req = resty.New().R()
 	req.Method = http.MethodGet
 	req.URL = srv.URL + "/value/counter/TestCounter"
-	req.Header.Add("Content-Type", textPlaint)
+	req.Header.Add("Content-Type", textPlain)
 
 	resp, err := req.Send()
 	require.Nil(t, err)
@@ -76,14 +104,14 @@ func TestGaugeValueHandler(t *testing.T) {
 	req := resty.New().R()
 	req.Method = http.MethodPost
 	req.URL = srv.URL + "/update/gauge/TestCounter/" + testValueStr
-	req.Header.Add("Content-Type", textPlaint)
+	req.Header.Add("Content-Type", textPlain)
 	_, err := req.Send()
 	require.Nil(t, err)
 
 	req = resty.New().R()
 	req.Method = http.MethodGet
 	req.URL = srv.URL + "/value/gauge/TestCounter"
-	req.Header.Add("Content-Type", textPlaint)
+	req.Header.Add("Content-Type", textPlain)
 	resp, err := req.Send()
 	require.Nil(t, err)
 	respBody := string(resp.Body())

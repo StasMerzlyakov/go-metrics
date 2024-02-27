@@ -16,6 +16,8 @@ type HTTPAdapter interface {
 	PostCounter(w http.ResponseWriter, req *http.Request)
 	GetCounter(w http.ResponseWriter, req *http.Request)
 	AllMetrics(w http.ResponseWriter, request *http.Request)
+	PostMetric(w http.ResponseWriter, req *http.Request)
+	ValueMetric(w http.ResponseWriter, req *http.Request)
 }
 
 func CreateMeterServer(config *config.ServerConfiguration,
@@ -66,6 +68,7 @@ func createHTTPHandler(httpAdapter HTTPAdapter, middlewares ...func(http.Handler
 	r.Get("/", httpAdapter.AllMetrics)
 
 	r.Route("/update", func(r chi.Router) {
+		r.Post("/", httpAdapter.PostMetric)
 		r.Post("/gauge/{name}/{value}", httpAdapter.PostGauge)
 		r.Post("/gauge/{name}", StatusNotFound)
 		r.Post("/counter/{name}/{value}", httpAdapter.PostCounter)
@@ -74,6 +77,7 @@ func createHTTPHandler(httpAdapter HTTPAdapter, middlewares ...func(http.Handler
 	})
 
 	r.Route("/value", func(r chi.Router) {
+		r.Post("/", httpAdapter.ValueMetric)
 		r.Get("/gauge/{name}", httpAdapter.GetGauge)
 		r.Get("/counter/{name}", httpAdapter.GetCounter)
 	})
