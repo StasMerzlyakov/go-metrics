@@ -53,18 +53,18 @@ func TestMemStatsSource(t *testing.T) {
 
 	require.Equal(t, len(expectedKeys), len(metrics))
 
-	var pollCount string
+	var pollCount int64
 
 	for _, metric := range metrics {
-		mType, ok := expectedKeys[metric.Name]
-		require.Truef(t, ok, "pollMetrics doesn't contain key %v", metric.Name)
-		require.Equalf(t, mType, metric.Type, "pollMetrics contain key %v with different type", metric.Name)
+		mType, ok := expectedKeys[metric.ID]
+		require.Truef(t, ok, "pollMetrics doesn't contain key %v", metric.ID)
+		require.Equalf(t, mType, metric.MType, "pollMetrics contain key %v with different type", metric.ID)
 
-		if metric.Name == "PollCount" {
-			pollCount = metric.Value
+		if metric.ID == "PollCount" {
+			pollCount = *metric.Delta
 		}
 
 	}
 
-	assert.Equal(t, "4", pollCount)
+	assert.Equal(t, int64(4), pollCount)
 }

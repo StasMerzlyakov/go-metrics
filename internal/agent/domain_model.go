@@ -2,13 +2,14 @@ package agent
 
 type MetricType string
 
-const (
-	GaugeType   MetricType = "Gauge"
-	CounterType MetricType = "Counter"
-)
-
-type Metric struct {
-	Name  string
-	Type  MetricType
-	Value string
+type Metrics struct {
+	ID    string     `json:"id"`              // имя метрики
+	MType MetricType `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64     `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64   `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
+
+const (
+	GaugeType   MetricType = "gauge"
+	CounterType MetricType = "counter"
+)

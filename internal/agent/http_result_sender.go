@@ -24,15 +24,9 @@ type httpResultSender struct {
 	client    *resty.Client
 }
 
-func (h *httpResultSender) SendMetrics(metrics []Metric) error {
+func (h *httpResultSender) SendMetrics(metrics []Metrics) error {
 	for _, metric := range metrics {
-		var httpType string
-		if metric.Type == GaugeType {
-			httpType = "gauge"
-		} else {
-			httpType = "counter"
-		}
-		err := h.store(httpType, metric.Name, metric.Value)
+		err := h.store(metric)
 		if err != nil {
 			return err
 		}
@@ -40,14 +34,9 @@ func (h *httpResultSender) SendMetrics(metrics []Metric) error {
 	return nil
 }
 
-func (h *httpResultSender) store(metricType string, metricName string, value string) error {
+func (h *httpResultSender) store(metric Metrics) error {
 	_, err := h.client.R().
-		SetHeader("Content-Type", "text/plain; charset=UTF-8").
-		SetPathParams(map[string]string{
-			"metricType": metricType,
-			"metricName": metricName,
-			"value":      value,
-		}).Post(h.serverAdd + "/update/{metricType}/{metricName}/{value}")
-
+		SetHeader("Content-Type", "application/json; charset=UTF-8").
+		SetBody(metric).Post(h.serverAdd + "/update/")
 	return err
 }

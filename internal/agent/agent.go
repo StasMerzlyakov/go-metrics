@@ -11,12 +11,12 @@ import (
 )
 
 type ResultSender interface {
-	SendMetrics(metrics []Metric) error
+	SendMetrics(metrics []Metrics) error
 }
 
 type MetricStorage interface {
 	Refresh() error
-	GetMetrics() []Metric
+	GetMetrics() []Metrics
 }
 
 func Create(config *config.AgentConfiguration,

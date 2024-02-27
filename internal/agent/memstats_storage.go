@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"fmt"
 	"math/rand"
 	"runtime"
 	"sync/atomic"
@@ -56,23 +55,22 @@ func (m *memStatsSource) Refresh() error {
 	return nil
 }
 
-func (m *memStatsSource) GetMetrics() []Metric {
-	var metrics []Metric
+func (m *memStatsSource) GetMetrics() []Metrics {
+	var metrics []Metrics
 	for k, v := range m.memStatStorage {
-		metric := Metric{
-			Name:  k,
-			Type:  GaugeType,
-			Value: fmt.Sprintf("%v", v),
-		}
-		metrics = append(metrics, metric)
+		value := v
+		metrics = append(metrics, Metrics{
+			ID:    k,
+			MType: GaugeType,
+			Value: &value,
+		})
 	}
 
-	pollCountMetric := Metric{
-		Name:  "PollCount",
-		Type:  CounterType,
-		Value: fmt.Sprintf("%v", m.poolCounter),
-	}
-
-	metrics = append(metrics, pollCountMetric)
+	poolCount := m.poolCounter
+	metrics = append(metrics, Metrics{
+		ID:    "PollCount",
+		MType: CounterType,
+		Delta: &poolCount,
+	})
 	return metrics
 }
