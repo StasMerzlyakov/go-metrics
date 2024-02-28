@@ -25,8 +25,8 @@ func TestCompressGZIPBufferResponseMW(t *testing.T) {
 
 	compressMW := compress.NewCompressGZIPBufferResponseMW(suga)
 
-	mux.Handle("/json", middleware.Conveyor(defaultJsonHandle{}, compressMW))
-	mux.Handle("/html", middleware.Conveyor(defaultHtmlHandle{}, compressMW))
+	mux.Handle("/json", middleware.Conveyor(defaultJSONHandle{}, compressMW))
+	mux.Handle("/html", middleware.Conveyor(defaultHTMLHandle{}, compressMW))
 	mux.Handle("/text", middleware.Conveyor(defaultTextHandle{}, compressMW))
 
 	srv := httptest.NewServer(mux)

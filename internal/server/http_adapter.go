@@ -15,7 +15,7 @@ import (
 const (
 	applicationJSON = "application/json"
 	textPlain       = "text/plain"
-	textHtml        = "text/html"
+	textHTML        = "text/html"
 )
 
 type MetricController interface {
@@ -128,7 +128,7 @@ func (h *httpAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
 
 func (h *httpAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
 	metrics := h.metricController.GetAllMetrics()
-	w.Header().Set("Content-Type", textHtml)
+	w.Header().Set("Content-Type", textHTML)
 
 	allMetricsViewTmpl.Execute(w, metrics)
 	h.logger.Infow("AllMetrics", "status", "ok")

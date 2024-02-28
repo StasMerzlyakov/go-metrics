@@ -23,9 +23,9 @@ func (ch *checkBodyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type defaultHtmlHandle struct{}
+type defaultHTMLHandle struct{}
 
-func (defaultHtmlHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (defaultHTMLHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	io.WriteString(w, "<html><body>"+strings.Repeat("Hello, world<br>", 20)+"</body></html>")
 }
@@ -38,9 +38,9 @@ func (defaultTextHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-type defaultJsonHandle struct{}
+type defaultJSONHandle struct{}
 
-func (defaultJsonHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (defaultJSONHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	io.WriteString(w, "{ "+strings.Repeat(`"msg":"Hello, world",`, 19)+`"msg":"Hello, world"`+"}")
 }
