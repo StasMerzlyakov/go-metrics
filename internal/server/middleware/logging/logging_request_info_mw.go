@@ -19,7 +19,7 @@ func NewLoggingRequestMW(log *zap.SugaredLogger) middleware.Middleware {
 
 			duration := time.Since(start)
 
-			log.Infoln(
+			log.Infow("requestStatus",
 				"uri", uri,
 				"method", method,
 				"duration", duration,

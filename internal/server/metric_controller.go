@@ -58,7 +58,7 @@ func (mc *metricController) GetCounter(name string) (int64, bool) {
 	return mc.counterStorage.Get(name)
 }
 
-func (mc *metricController) GetGaguge(name string) (float64, bool) {
+func (mc *metricController) GetGauge(name string) (float64, bool) {
 	return mc.gaugeStorage.Get(name)
 }
 

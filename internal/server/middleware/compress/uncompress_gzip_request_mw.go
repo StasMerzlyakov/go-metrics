@@ -1,36 +1,41 @@
 package compress
 
 import (
+	"compress/gzip"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
-	gPool "github.com/ungerik/go-pool"
 	"go.uber.org/zap"
 )
+
+type gzipreadCloser struct {
+	*gzip.Reader
+	io.Closer
+}
+
+func (gz gzipreadCloser) Close() error {
+	return gz.Closer.Close()
+}
 
 func NewUncompressGZIPRequestMW(log *zap.SugaredLogger) middleware.Middleware {
 
 	return func(next http.Handler) http.Handler {
-
 		uncmprFn := func(w http.ResponseWriter, r *http.Request) {
-			var reader io.ReadCloser
-
-			if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-				gz := gPool.Gzip.GetReader(r.Body)
-				defer gPool.Gzip.PutReader(gz)
-				reader = gz
-				log.Info("content", "compresed")
-			} else {
-				reader = r.Body
-				log.Info("content", "uncompresed")
+			contentEncodingHeader := r.Header.Get("Content-Encoding")
+			if strings.Contains(contentEncodingHeader, "gzip") {
+				zr, err := gzip.NewReader(r.Body)
+				if err != nil {
+					log.Infow("uncompress request error:", err.Error())
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				r.Body = gzipreadCloser{zr, r.Body}
+				log.Infow("readGZIP", "Content-Encoding", r.Header.Get("Content-Encoding"), "msq", "the request will be unzip")
 			}
-
-			r.Body = reader
 			next.ServeHTTP(w, r)
 		}
-
 		return http.HandlerFunc(uncmprFn)
 	}
 }

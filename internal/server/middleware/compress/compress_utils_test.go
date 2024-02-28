@@ -1,10 +1,27 @@
 package compress_test
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"strings"
 )
+
+type checkBodyHandler struct {
+	expected []byte
+}
+
+func (ch *checkBodyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+
+	if err != nil && err != io.EOF {
+		http.Error(w, "read body err", http.StatusInternalServerError)
+	}
+
+	if !bytes.Equal(ch.expected, body) {
+		http.Error(w, "unexpected body err", http.StatusBadRequest)
+	}
+}
 
 type defaultHtmlHandle struct{}
 

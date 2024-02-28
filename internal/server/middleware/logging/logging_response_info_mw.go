@@ -46,7 +46,7 @@ func NewLoggingResponseMW(log *zap.SugaredLogger) middleware.Middleware {
 			}
 
 			next.ServeHTTP(lw, r)
-			log.Infoln("statusCode", lw.responseData.status, "size", lw.responseData.size)
+			log.Infow("requestResult", "statusCode", lw.responseData.status, "size", lw.responseData.size)
 		}
 		return http.HandlerFunc(lrw)
 	}

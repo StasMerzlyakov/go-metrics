@@ -9,6 +9,7 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware/compress"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/storage"
 	"go.uber.org/zap"
@@ -20,12 +21,12 @@ type Server interface {
 }
 
 func createMWList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
-	loggingResponseMW := logging.NewLoggingResponseMW(log)
-	loggingRequestMW := logging.NewLoggingRequestMW(log)
 
 	return []func(http.Handler) http.Handler{
-		loggingRequestMW,
-		loggingResponseMW,
+		logging.NewLoggingResponseMW(log),
+		compress.NewCompressGZIPResponseMW(log), //compress.NewCompressGZIPBufferResponseMW(log),
+		compress.NewUncompressGZIPRequestMW(log),
+		logging.NewLoggingRequestMW(log),
 	}
 }
 
@@ -56,6 +57,7 @@ func main() {
 	defer func() {
 		cancelFn()
 		server.WaitDone()
+		srvConf.Log.Sync() // Велез лог
 	}()
 	<-exit
 }

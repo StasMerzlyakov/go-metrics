@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestCompressGZIPResponseMW(t *testing.T) {
+func TestCompressGZIPBufferResponseMW(t *testing.T) {
 
 	logger, err := zap.NewDevelopment()
 	require.NoError(t, err)
@@ -23,7 +23,7 @@ func TestCompressGZIPResponseMW(t *testing.T) {
 
 	suga := logger.Sugar()
 
-	compressMW := compress.NewCompressGZIPResponseMW(suga)
+	compressMW := compress.NewCompressGZIPBufferResponseMW(suga)
 
 	mux.Handle("/json", middleware.Conveyor(defaultJsonHandle{}, compressMW))
 	mux.Handle("/html", middleware.Conveyor(defaultHtmlHandle{}, compressMW))
