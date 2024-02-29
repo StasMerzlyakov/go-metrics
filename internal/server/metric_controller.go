@@ -14,6 +14,8 @@ type MemValue interface {
 }
 
 type MetricsStorage[T MemValue] interface {
+	Load(MetricsStorage[T])
+	Store() MetricsStorage[T]
 	Set(key string, value T)
 	Add(key string, value T)
 	Get(key string) (T, bool)

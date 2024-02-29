@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,16 @@ func TestInt64MemStorage(t *testing.T) {
 
 	_, v = ms.Get("m2")
 	assert.False(t, v)
+
+	storedMs := ms.Store()
+
+	k, v = storedMs.Get("m")
+	assert.True(t, v)
+	assert.Equal(t, int64(5), k)
+
+	ms.Load(storedMs)
+
+	assert.True(t, reflect.DeepEqual(ms, storedMs))
 }
 
 func TestFloat64MemStorage(t *testing.T) {
@@ -43,4 +54,14 @@ func TestFloat64MemStorage(t *testing.T) {
 
 	_, v = ms.Get("m2")
 	assert.False(t, v)
+
+	storedMs := ms.Store()
+
+	k, v = storedMs.Get("m")
+	assert.True(t, v)
+	assert.Equal(t, float64(7), k)
+
+	ms.Load(storedMs)
+
+	assert.True(t, reflect.DeepEqual(ms, storedMs))
 }

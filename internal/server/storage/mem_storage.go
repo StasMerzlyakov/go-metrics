@@ -20,6 +20,14 @@ type memStorage[T memValue] struct {
 	storage map[string]T
 }
 
+func (ms *memStorage[T]) Load(toLoad *memStorage[T]) {
+	*ms = *toLoad
+}
+
+func (ms *memStorage[T]) Store() *memStorage[T] {
+	return ms
+}
+
 func (ms *memStorage[T]) Keys() []string {
 	keys := make([]string, 0, len(ms.storage))
 	for k := range ms.storage {
