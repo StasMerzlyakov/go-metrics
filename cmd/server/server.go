@@ -20,7 +20,7 @@ type Server interface {
 	WaitDone()
 }
 
-func createMWList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
+func createMiddleWareList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
 
 	return []func(http.Handler) http.Handler{
 		logging.NewLoggingResponseMW(log),
@@ -33,7 +33,20 @@ func createMWList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
 func main() {
 
 	// Конфигурация
-	srvConf := config.LoadServerConfig()
+	srvConf, err := config.LoadServerConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	// Создаем логгер
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		// вызываем панику, если ошибка
+		panic("cannot initialize zap")
+	}
+	defer logger.Sync()
+
+	log := logger.Sugar()
 
 	// Сборка сервера
 	counterStorage := storage.NewMemoryInt64Storage()
@@ -43,9 +56,9 @@ func main() {
 		gougeStorage,
 	)
 
-	adapter := server.NewHTTPAdapterHandler(controller, srvConf.Log)
+	adapter := server.NewHTTPAdapterHandler(controller, log)
 
-	mwList := createMWList(srvConf.Log)
+	mwList := createMiddleWareList(log)
 	var server Server = server.CreateMeterServer(srvConf, adapter, mwList...)
 
 	// Запуск сервера
@@ -57,7 +70,6 @@ func main() {
 	defer func() {
 		cancelFn()
 		server.WaitDone()
-		srvConf.Log.Sync() // Велез лог
 	}()
 	<-exit
 }

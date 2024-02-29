@@ -5,49 +5,31 @@ import (
 	"fmt"
 	"os"
 
-	"go.uber.org/zap"
+	"github.com/caarlos0/env"
 )
 
 type ServerConfiguration struct {
-	URL string
-	Log *zap.SugaredLogger
+	URL             string `env:"ADDRESS"`
+	StoreInterval   uint   `env:"STORE_INTERVAL"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	Restore         bool   `env:"RESTORE"`
 }
 
-func (c *ServerConfiguration) String() string {
-	return c.URL
-}
+func LoadServerConfig() (*ServerConfiguration, error) {
+	srvConf := &ServerConfiguration{}
 
-func (c *ServerConfiguration) Set(s string) error {
-	c.URL = s
-	return nil
-}
-
-var _ flag.Value = (*ServerConfiguration)(nil)
-
-func LoadServerConfig() *ServerConfiguration {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		// вызываем панику, если ошибка
-		panic("cannot initialize zap")
-	}
-	defer logger.Sync()
-
-	srvConf := &ServerConfiguration{
-		Log: logger.Sugar(),
-	}
-	srvConf.Set(":8080") // Значение по-умолчанию
-
-	flag.Var(srvConf, "a", "serverAddress")
+	flag.StringVar(&srvConf.URL, "a", ":8080", "ServerAddress")
+	flag.UintVar(&srvConf.StoreInterval, "i", 300, "StoreInterval")
+	flag.StringVar(&srvConf.FileStoragePath, "f", "/tmp/metrics-db.json", "File storage path")
+	flag.BoolVar(&srvConf.Restore, "r", true, "Is restore need")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-
-	addr, isExists := os.LookupEnv("ADDRESS")
-	if isExists {
-		srvConf.Set(addr)
+	err := env.Parse(srvConf)
+	if err != nil {
+		return nil, err
 	}
-
-	return srvConf
+	return srvConf, nil
 }
