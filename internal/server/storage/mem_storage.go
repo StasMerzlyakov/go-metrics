@@ -1,14 +1,32 @@
 package storage
 
-func NewMemoryFloat64Storage() *memStorage[float64] {
-	return &memStorage[float64]{
-		storage: make(map[string]float64),
+import (
+	"fmt"
+
+	"github.com/StasMerzlyakov/go-metrics/internal/server"
+)
+
+type memFloat64 struct {
+	memStorage[float64]
+}
+
+type memInt64 struct {
+	memStorage[int64]
+}
+
+func NewMemoryFloat64Storage() *memFloat64 {
+	return &memFloat64{
+		memStorage[float64]{
+			storage: make(map[string]float64),
+		},
 	}
 }
 
-func NewMemoryInt64Storage() *memStorage[int64] {
-	return &memStorage[int64]{
-		storage: make(map[string]int64),
+func NewMemoryInt64Storage() *memInt64 {
+	return &memInt64{
+		memStorage[int64]{
+			storage: make(map[string]int64),
+		},
 	}
 }
 
@@ -20,12 +38,39 @@ type memStorage[T memValue] struct {
 	storage map[string]T
 }
 
-func (ms *memStorage[T]) Load(toLoad *memStorage[T]) {
-	*ms = *toLoad
+func (ms *memStorage[T]) Load(metrics []server.Metrics) error {
+	ns := make(map[string]T)
+
+	for _, it := range metrics {
+		if it.MType == server.GaugeType {
+			if it.Value == nil {
+				return fmt.Errorf("load error: value for key %v is nil", it.ID)
+			}
+			value := *it.Value
+			ns[it.ID] = (T)(value)
+		} else {
+			if it.Delta == nil {
+				return fmt.Errorf("load error: delta for key %v is nil", it.ID)
+			}
+			value := *it.Value
+			ns[it.ID] = (T)(value)
+		}
+	}
+	ms.storage = ns
+	return nil
 }
 
-func (ms *memStorage[T]) Store() *memStorage[T] {
-	return ms
+func (ms memFloat64) Store() ([]server.Metrics, error) {
+
+}
+
+func (ms memFloat64) Load(metrics []server.Metrics) ([]server.Metrics, error) {
+
+}
+
+func (ms *memStorage[T]) Store() ([]server.Metrics, error) {
+	// default method
+	return nil, fmt.Errorf("unimplemented !!!")
 }
 
 func (ms *memStorage[T]) Keys() []string {
