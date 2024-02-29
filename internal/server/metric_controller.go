@@ -1,9 +1,5 @@
 package server
 
-import (
-	"fmt"
-)
-
 type metricController struct {
 	counterStorage CounterStorage
 	gaugeStorage   GougeStorage
@@ -34,23 +30,23 @@ func NewMetricController(
 	}
 }
 
-func (mc *metricController) GetAllMetrics() MetricModel {
-	items := MetricModel{}
+func (mc *metricController) GetAllMetrics() []Metrics {
+	var items []Metrics
 	for _, k := range mc.counterStorage.Keys() {
 		v, _ := mc.counterStorage.Get(k)
-		items.Items = append(items.Items, MetricsData{
-			CounterType,
-			k,
-			fmt.Sprintf("%v", v),
+		items = append(items, Metrics{
+			ID:    k,
+			MType: CounterType,
+			Delta: &v,
 		})
 	}
 
 	for _, k := range mc.gaugeStorage.Keys() {
 		v, _ := mc.gaugeStorage.Get(k)
-		items.Items = append(items.Items, MetricsData{
-			GaugeType,
-			k,
-			fmt.Sprintf("%v", v),
+		items = append(items, Metrics{
+			ID:    k,
+			MType: GaugeType,
+			Value: &v,
 		})
 	}
 	return items

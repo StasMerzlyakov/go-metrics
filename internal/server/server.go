@@ -25,7 +25,6 @@ func CreateMeterServer(config *config.ServerConfiguration,
 	middlewares ...func(http.Handler) http.Handler,
 ) *meterServer {
 	return &meterServer{
-		sugar: config.Log,
 		srv: &http.Server{
 			Addr:        config.URL,
 			Handler:     createHTTPHandler(httpAdapter, middlewares...),

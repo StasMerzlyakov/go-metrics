@@ -19,7 +19,7 @@ const (
 )
 
 type MetricController interface {
-	GetAllMetrics() MetricModel
+	GetAllMetrics() []Metrics
 	GetCounter(name string) (int64, bool)
 	GetGauge(name string) (float64, bool)
 	AddCounter(name string, value int64)
@@ -143,11 +143,16 @@ var allMetricsViewTmpl, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
         <th>Name</th>
         <th>Value</th>
     </tr>
-    {{ range .Items}}
+    {{ range .}}
         <tr>
-            <td>{{ .Type }}</td>
-            <td>{{ .Name }}</td>
-            <td>{{ .Value }}</td>
+            <td>{{ .MType }}</td>
+            <td>{{ .ID }}</td>
+			{{if .Delta}}
+			<td>{{ .Delta }}</td>
+			{{else}}
+			<td>{{ .Value }}</td>
+			{{end}}
+            
         </tr>
     {{ end}}
 </table>
