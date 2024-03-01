@@ -9,9 +9,9 @@ import (
 )
 
 type AgentConfiguration struct {
-	ServerAddr     string `env:"ADDRESS"`
-	PollInterval   int    `env:"POLL_INTERVAL"`
-	ReportInterval int    `env:"REPORT_INTERVAL"`
+	ServerAddr        string `env:"ADDRESS"`
+	PollIntervalSec   int    `env:"POLL_INTERVAL"`
+	ReportIntervalSec int    `env:"REPORT_INTERVAL"`
 }
 
 func LoadAgentConfig() (*AgentConfiguration, error) {
@@ -19,8 +19,8 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 	agentCfg := &AgentConfiguration{}
 
 	flag.StringVar(&agentCfg.ServerAddr, "a", "localhost:8080", "serverAddress")
-	flag.IntVar(&agentCfg.PollInterval, "p", 2, "poolInterval in seconds")
-	flag.IntVar(&agentCfg.ReportInterval, "r", 10, "reportInterval in seconds")
+	flag.IntVar(&agentCfg.PollIntervalSec, "p", 2, "poolInterval in seconds")
+	flag.IntVar(&agentCfg.ReportIntervalSec, "r", 10, "reportInterval in seconds")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()

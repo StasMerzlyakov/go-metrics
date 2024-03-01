@@ -16,7 +16,6 @@ import (
 )
 
 type MetricUseCase interface {
-	SetAllMetrics(in []domain.Metrics) error
 	GetAllMetrics() ([]domain.Metrics, error)
 	GetCounter(name string) (*domain.Metrics, error)
 	GetGauge(name string) (*domain.Metrics, error)

@@ -26,8 +26,8 @@ func Create(config *config.AgentConfiguration,
 	agent := &agent{
 		metricStorage:     metricStorage,
 		resultSender:      resultSender,
-		pollIntervalSec:   config.PollInterval,
-		reportIntervalSec: config.ReportInterval,
+		pollIntervalSec:   config.PollIntervalSec,
+		reportIntervalSec: config.ReportIntervalSec,
 	}
 
 	return agent
@@ -53,12 +53,11 @@ func (a *agent) Start(ctx context.Context) {
 
 func (a *agent) pollMetrics(ctx context.Context) {
 	pollInterval := time.Duration(a.pollIntervalSec) * time.Second
-
+	defer a.wg.Done()
 	for {
 		select {
 		case <-ctx.Done():
 			logrus.Info("PollMetrics DONE")
-			a.wg.Done()
 			return
 
 		case <-time.After(pollInterval):

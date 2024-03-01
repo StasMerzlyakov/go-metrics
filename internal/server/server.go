@@ -9,9 +9,16 @@ import (
 	"go.uber.org/zap"
 )
 
+type Backuper interface {
+	RestoreBackUp() error
+	Run(ctx context.Context) error
+	WaitDone()
+}
+
 func NewMetricsServer(config *config.ServerConfiguration,
 	sugar *zap.SugaredLogger,
 	httpHandler http.Handler,
+	backUper Backuper,
 ) *meterServer {
 	return &meterServer{
 		srv: &http.Server{
@@ -28,18 +35,28 @@ type meterServer struct {
 	sugar        *zap.SugaredLogger
 	srv          *http.Server
 	wg           sync.WaitGroup
+	backuper     Backuper
 	startContext context.Context
 }
 
 func (s *meterServer) Start(startContext context.Context) {
 	s.startContext = startContext
-	s.wg.Add(1)
 	go func() {
+		s.wg.Add(1)
 		defer s.wg.Done()
 		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-			s.sugar.Fatalf("ListenAndServe(): %v", err)
+			s.sugar.Fatalw("srv.ListenAndServe", "msg", err.Error())
 		}
 	}()
+	if s.backuper != nil {
+		go func() {
+			s.wg.Add(1)
+			defer s.wg.Done()
+			if err := s.backuper.Run(startContext); err != nil {
+				s.sugar.Fatalw("backuper.Run", "msg", err.Error())
+			}
+		}()
+	}
 	s.sugar.Infof("Server started")
 }
 

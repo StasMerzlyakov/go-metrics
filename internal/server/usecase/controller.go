@@ -9,6 +9,10 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
+type SyncBackUper interface {
+	DoBackUp() error
+}
+
 type Storage interface {
 	SetAllMetrics(in []domain.Metrics) error
 	GetAllMetrics() ([]domain.Metrics, error)
@@ -18,7 +22,8 @@ type Storage interface {
 }
 
 type metricUseCase struct {
-	storage Storage
+	storage      Storage
+	syncBackUper SyncBackUper // добавляю сюда, мало ли откуда данные могут изменяться
 }
 
 func NewMetricUseCase(storage Storage) *metricUseCase {
@@ -28,6 +33,10 @@ func NewMetricUseCase(storage Storage) *metricUseCase {
 }
 
 var nameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")
+
+func (mc *metricUseCase) SetSyncBackUper(syncBackUper SyncBackUper) {
+	mc.syncBackUper = syncBackUper
+}
 
 func (mc *metricUseCase) CheckName(name string) bool {
 	return nameRegexp.MatchString(name)
@@ -107,6 +116,10 @@ func (mc *metricUseCase) AddCounter(m *domain.Metrics) error {
 		return err
 	}
 
+	if mc.syncBackUper != nil {
+		mc.syncBackUper.DoBackUp()
+	}
+
 	if newValue, err := mc.storage.Get(m.ID, m.MType); err != nil {
 		return err
 	} else {
@@ -124,5 +137,13 @@ func (mc *metricUseCase) SetGauge(m *domain.Metrics) error {
 	if m.MType != domain.GaugeType {
 		return fmt.Errorf("unexpected MType %v, expected %v", m.MType, domain.GaugeType)
 	}
-	return mc.storage.Set(m)
+	if err := mc.storage.Set(m); err != nil {
+		return err
+	}
+
+	if mc.syncBackUper != nil {
+		mc.syncBackUper.DoBackUp()
+	}
+
+	return nil
 }

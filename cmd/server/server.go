@@ -9,9 +9,11 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
-	adapter "github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/handler"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware/compress"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware/logging"
+	backuper "github.com/StasMerzlyakov/go-metrics/internal/server/controller/timer/backup"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/timer/backup/formatter"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/usecase"
 	"go.uber.org/zap"
@@ -53,13 +55,23 @@ func main() {
 	// Сборка сервера
 	storage := memory.NewStorage()
 
+	backupFomratter := formatter.NewJson(sugarLog, srvConf.FileStoragePath)
+	backuper := backuper.New(sugarLog, srvConf, storage, backupFomratter)
+
 	usecase := usecase.NewMetricUseCase(storage)
 
+	if srvConf.StoreIntervalSec == 0 {
+		usecase.SetSyncBackUper(backuper)
+	}
+
+	if srvConf.Restore {
+		backuper.RestoreBackUp()
+	}
+
 	mwList := createMiddleWareList(sugarLog)
+	httpHandler := handler.NewHTTP(usecase, sugarLog, mwList...)
 
-	httpHandler := adapter.NewHTTP(usecase, sugarLog, mwList...)
-
-	var server Server = server.NewMetricsServer(srvConf, sugarLog, httpHandler)
+	var server Server = server.NewMetricsServer(srvConf, sugarLog, httpHandler, backuper)
 
 	// Запуск сервера
 	ctx, cancelFn := context.WithCancel(context.Background())
