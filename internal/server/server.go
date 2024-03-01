@@ -6,31 +6,21 @@ import (
 	"sync"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
-	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
-type HTTPAdapter interface {
-	PostGauge(w http.ResponseWriter, req *http.Request)
-	GetGauge(w http.ResponseWriter, req *http.Request)
-	PostCounter(w http.ResponseWriter, req *http.Request)
-	GetCounter(w http.ResponseWriter, req *http.Request)
-	AllMetrics(w http.ResponseWriter, request *http.Request)
-	PostMetric(w http.ResponseWriter, req *http.Request)
-	ValueMetric(w http.ResponseWriter, req *http.Request)
-}
-
-func CreateMeterServer(config *config.ServerConfiguration,
-	httpAdapter HTTPAdapter,
-	middlewares ...func(http.Handler) http.Handler,
+func NewMetricsServer(config *config.ServerConfiguration,
+	sugar *zap.SugaredLogger,
+	httpHandler http.Handler,
 ) *meterServer {
 	return &meterServer{
 		srv: &http.Server{
 			Addr:        config.URL,
-			Handler:     createHTTPHandler(httpAdapter, middlewares...),
+			Handler:     httpHandler,
 			ReadTimeout: 0,
 			IdleTimeout: 0,
 		},
+		sugar: sugar,
 	}
 }
 
@@ -57,28 +47,4 @@ func (s *meterServer) WaitDone() {
 	s.srv.Shutdown(s.startContext)
 	s.wg.Wait()
 	s.sugar.Infof("WaitDone")
-}
-
-func createHTTPHandler(httpAdapter HTTPAdapter, middlewares ...func(http.Handler) http.Handler) http.Handler {
-	r := chi.NewRouter()
-
-	r.Use(middlewares...)
-
-	r.Get("/", httpAdapter.AllMetrics)
-
-	r.Route("/update", func(r chi.Router) {
-		r.Post("/", httpAdapter.PostMetric)
-		r.Post("/gauge/{name}/{value}", httpAdapter.PostGauge)
-		r.Post("/gauge/{name}", StatusNotFound)
-		r.Post("/counter/{name}/{value}", httpAdapter.PostCounter)
-		r.Post("/counter/{name}", StatusNotFound)
-		r.Post("/{type}/{name}/{value}", StatusNotImplemented)
-	})
-
-	r.Route("/value", func(r chi.Router) {
-		r.Post("/", httpAdapter.ValueMetric)
-		r.Get("/gauge/{name}", httpAdapter.GetGauge)
-		r.Get("/counter/{name}", httpAdapter.GetCounter)
-	})
-	return r
 }

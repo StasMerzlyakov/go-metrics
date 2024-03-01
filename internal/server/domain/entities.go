@@ -1,6 +1,5 @@
-package server
+package domain
 
-// Обмен http<->http_adapter
 type Metrics struct {
 	ID    string     `json:"id"`              // имя метрики
 	MType MetricType `json:"type"`            // параметр, принимающий значение gauge или counter

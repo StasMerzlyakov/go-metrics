@@ -9,9 +9,11 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware/compress"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware/logging"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/storage"
+	adapter "github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/handler"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware/logging"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/storage/memory"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/usecase"
 	"go.uber.org/zap"
 )
 
@@ -46,20 +48,18 @@ func main() {
 	}
 	defer logger.Sync()
 
-	log := logger.Sugar()
+	sugarLog := logger.Sugar()
 
 	// Сборка сервера
-	counterStorage := storage.NewMemoryInt64Storage()
-	gougeStorage := storage.NewMemoryFloat64Storage()
-	controller := server.NewMetricController(
-		counterStorage,
-		gougeStorage,
-	)
+	storage := memory.NewStorage()
 
-	adapter := server.NewHTTPAdapterHandler(controller, log)
+	usecase := usecase.NewMetricUseCase(storage)
 
-	mwList := createMiddleWareList(log)
-	var server Server = server.CreateMeterServer(srvConf, adapter, mwList...)
+	mwList := createMiddleWareList(sugarLog)
+
+	httpHandler := adapter.NewHTTP(usecase, sugarLog, mwList...)
+
+	var server Server = server.NewMetricsServer(srvConf, sugarLog, httpHandler)
 
 	// Запуск сервера
 	ctx, cancelFn := context.WithCancel(context.Background())

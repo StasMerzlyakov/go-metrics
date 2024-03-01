@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware"
 	"go.uber.org/zap"
 )
 

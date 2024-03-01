@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware"
 	gPool "github.com/ungerik/go-pool"
 	"go.uber.org/zap"
 )

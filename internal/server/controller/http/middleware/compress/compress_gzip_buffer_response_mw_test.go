@@ -6,15 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware/compress"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
-func TestCompressGZIPResponseMW(t *testing.T) {
+func TestCompressGZIPBufferResponseMW(t *testing.T) {
 
 	logger, err := zap.NewDevelopment()
 	require.NoError(t, err)
@@ -23,7 +23,7 @@ func TestCompressGZIPResponseMW(t *testing.T) {
 
 	suga := logger.Sugar()
 
-	compressMW := compress.NewCompressGZIPResponseMW(suga)
+	compressMW := compress.NewCompressGZIPBufferResponseMW(suga)
 
 	mux.Handle("/json", middleware.Conveyor(defaultJSONHandle{}, compressMW))
 	mux.Handle("/html", middleware.Conveyor(defaultHTMLHandle{}, compressMW))
