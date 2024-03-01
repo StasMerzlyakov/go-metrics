@@ -37,9 +37,12 @@ func NewMetricsServer(
 		}
 	}
 
+	// проверяем - нужен ли синхронный бэкап
 	doSyncBackup := config.StoreInterval == 0
 	if doSyncBackup && backUper != nil {
 		sugar.Warnw("NewMetricsServer", "msg", "backup work in sync mode")
+		// синхронный бэкап реализован через мехинизм листенеров изменений
+		//  (изменение данных может происходить и не только через http)
 		holder.AddListener(&backupSyncListener{
 			backUper: backUper,
 		})

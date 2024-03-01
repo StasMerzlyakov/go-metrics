@@ -14,7 +14,7 @@ const (
 	tempFileTemplate = "metrics_backup_*.json.tmp"
 )
 
-func NewJson(log *zap.SugaredLogger, fileStoragePath string) *jsonFormatter {
+func NewJSON(log *zap.SugaredLogger, fileStoragePath string) *jsonFormatter {
 	jsonFormatter := &jsonFormatter{
 		fileStoragePath: fileStoragePath,
 		logger:          log,
@@ -29,7 +29,7 @@ type jsonFormatter struct {
 
 func (jf *jsonFormatter) Write(metricses []domain.Metrics) error {
 	if jf.fileStoragePath == "" {
-		jf.logger.Errorw("Write", "status", "error", "msg", fmt.Sprintf("fileStoragePath is not specified"))
+		jf.logger.Errorw("Write", "status", "error", "msg", "fileStoragePath is not specified")
 		return os.ErrNotExist
 	}
 
@@ -45,7 +45,7 @@ func (jf *jsonFormatter) Write(metricses []domain.Metrics) error {
 	file, err = os.CreateTemp(tmpDir, tempFileTemplate)
 
 	if err != nil {
-		jf.logger.Infow("Write", "status", "ok", "error", fmt.Sprintf("can't create temp file"))
+		jf.logger.Infow("Write", "status", "ok", "error", "can't create temp file")
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (jf *jsonFormatter) Read() ([]domain.Metrics, error) {
 	var result []domain.Metrics
 
 	if jf.fileStoragePath == "" {
-		jf.logger.Errorw("Read", "status", "error", "msg", fmt.Sprintf("fileStoragePath is not specified"))
+		jf.logger.Errorw("Read", "status", "error", "msg", "fileStoragePath is not specified")
 		return result, os.ErrNotExist
 	}
 

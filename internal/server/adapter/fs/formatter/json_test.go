@@ -58,7 +58,7 @@ func TestJsonFormatter(t *testing.T) {
 	logger := getLogger()
 
 	// Файл не указан
-	jF := formatter.NewJson(logger, "")
+	jF := formatter.NewJSON(logger, "")
 	restored, err := jF.Read()
 	require.True(t, len(restored) == 0)
 	require.ErrorIs(t, os.ErrNotExist, err)
@@ -75,7 +75,7 @@ func TestJsonFormatter(t *testing.T) {
 	defer os.Remove(file.Name())
 
 	fileName := file.Name()
-	jF = formatter.NewJson(logger, fileName)
+	jF = formatter.NewJSON(logger, fileName)
 	restored, err = jF.Read()
 	require.Error(t, err) // EOF
 	require.True(t, len(restored) == 0)

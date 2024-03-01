@@ -53,7 +53,7 @@ func main() {
 	// Сборка сервера
 	storage := memory.NewStorage()
 
-	backupFomratter := formatter.NewJson(sugarLog, srvConf.FileStoragePath)
+	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
 	backup := usecase.NewBackup(sugarLog, storage, backupFomratter)
 
 	metrics := usecase.NewMetrics(storage)
