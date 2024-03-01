@@ -30,7 +30,7 @@ func (*mockStorage) Get(id string, mType domain.MetricType) (*domain.Metrics, er
 
 func TestCheckName(t *testing.T) {
 
-	mc := usecase.NewMetricUseCase(&mockStorage{})
+	mc := usecase.NewMetrics(&mockStorage{})
 
 	testCases := []struct {
 		name   string
@@ -87,7 +87,7 @@ func TestCheckName(t *testing.T) {
 }
 
 func TestCheckMetrics(t *testing.T) {
-	mc := usecase.NewMetricUseCase(&mockStorage{})
+	mc := usecase.NewMetrics(&mockStorage{})
 
 	testCases := []struct {
 		name  string
@@ -138,7 +138,7 @@ func TestCheckMetrics(t *testing.T) {
 			if test.isOk {
 				assert.NoError(t, err)
 			} else {
-				assert.True(t, errors.Is(err, domain.DataError))
+				assert.True(t, errors.Is(err, domain.ErrDataFormat))
 			}
 		})
 	}

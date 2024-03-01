@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

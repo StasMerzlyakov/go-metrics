@@ -281,7 +281,7 @@ func (h *httpAdapter) ValueMetrics(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *httpAdapter) handlerStorageError(action string, err error, w http.ResponseWriter) {
-	if errors.Is(err, domain.DataError) {
+	if errors.Is(err, domain.ErrDataFormat) {
 		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

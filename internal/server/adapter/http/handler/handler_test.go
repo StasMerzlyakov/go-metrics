@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/handler"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"

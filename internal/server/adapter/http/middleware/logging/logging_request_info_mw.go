@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/http/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"go.uber.org/zap"
 )
 

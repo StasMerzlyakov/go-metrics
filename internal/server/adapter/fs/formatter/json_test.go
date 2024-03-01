@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/controller/timer/backup/formatter"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/formatter"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
