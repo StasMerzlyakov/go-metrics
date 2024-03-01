@@ -26,8 +26,8 @@ func Create(config *config.AgentConfiguration,
 	agent := &agent{
 		metricStorage:     metricStorage,
 		resultSender:      resultSender,
-		pollIntervalSec:   config.PollIntervalSec,
-		reportIntervalSec: config.ReportIntervalSec,
+		pollIntervalSec:   config.PollInterval,
+		reportIntervalSec: config.ReportInterval,
 	}
 
 	return agent
