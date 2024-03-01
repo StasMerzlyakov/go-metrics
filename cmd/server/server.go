@@ -61,6 +61,7 @@ func main() {
 	usecase := usecase.NewMetricUseCase(storage)
 
 	if srvConf.StoreIntervalSec == 0 {
+		// бэкапер прячу в usecase а не допустим в мидлы из соображений что изменение данных может инициализироваться из разных адаптеров
 		usecase.SetSyncBackUper(backuper)
 	}
 
