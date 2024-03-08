@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func AddMetricOperation(r *chi.Mux, metricApp MetricApp, log *zap.SugaredLogger) {
+func AddMetricOperations(r *chi.Mux, metricApp MetricApp, log *zap.SugaredLogger) {
 
 	adapter := &metricOperationAdapter{
 		metricApp: metricApp,
@@ -85,7 +85,7 @@ func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Re
 		}
 
 		if err != nil {
-			h.handlerStorageError(err, w)
+			h.handlerAppError(err, w)
 			return
 		}
 		if err := h.sendMetrics(w, metrics); err == nil {
@@ -115,7 +115,7 @@ func (h *metricOperationAdapter) ValueMetrics(w http.ResponseWriter, req *http.R
 		}
 
 		if err != nil {
-			h.handlerStorageError(err, w)
+			h.handlerAppError(err, w)
 			return
 		}
 
@@ -159,7 +159,7 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 	}
 
 	if err := h.metricApp.SetGauge(req.Context(), metrics); err != nil {
-		h.handlerStorageError(err, w)
+		h.handlerAppError(err, w)
 		return
 	}
 	h.logger.Infow(opName, "name", name, "status", "ok")
@@ -193,7 +193,7 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 	}
 
 	if err := h.metricApp.AddCounter(req.Context(), metrics); err != nil {
-		h.handlerStorageError(err, w)
+		h.handlerAppError(err, w)
 		return
 	}
 
@@ -212,7 +212,7 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 
 	m, err := h.metricApp.GetCounter(req.Context(), name)
 	if err != nil {
-		h.handlerStorageError(err, w)
+		h.handlerAppError(err, w)
 		return
 	}
 
@@ -238,7 +238,7 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 
 	m, err := h.metricApp.GetGauge(req.Context(), name)
 	if err != nil {
-		h.handlerStorageError(err, w)
+		h.handlerAppError(err, w)
 		return
 	}
 
@@ -254,7 +254,7 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
 	metricses, err := h.metricApp.GetAllMetrics(request.Context())
 	if err != nil {
-		h.handlerStorageError(err, w)
+		h.handlerAppError(err, w)
 		return
 	}
 
@@ -355,7 +355,7 @@ func (h *metricOperationAdapter) getAction() string {
 	return op
 }
 
-func (h *metricOperationAdapter) handlerStorageError(err error, w http.ResponseWriter) {
+func (h *metricOperationAdapter) handlerAppError(err error, w http.ResponseWriter) {
 	pc, _, _, _ := runtime.Caller(1)
 	action := runtime.FuncForPC(pc).Name()
 

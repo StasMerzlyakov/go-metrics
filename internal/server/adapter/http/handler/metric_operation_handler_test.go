@@ -42,7 +42,7 @@ func TestMetricOperation_Counter(t *testing.T) {
 	r := chi.NewRouter()
 
 	log := logger()
-	handler.AddMetricOperation(r, m, log)
+	handler.AddMetricOperations(r, m, log)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -90,7 +90,7 @@ func TestMetricOperation_Gague(t *testing.T) {
 	r := chi.NewRouter()
 
 	log := logger()
-	handler.AddMetricOperation(r, m, log)
+	handler.AddMetricOperations(r, m, log)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -139,7 +139,7 @@ func TestMetricOperation_All(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperation(r, m, log)
+	handler.AddMetricOperations(r, m, log)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -187,7 +187,7 @@ func TestMetricOperation_Counter_Update(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperation(r, m, log)
+	handler.AddMetricOperations(r, m, log)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -262,7 +262,7 @@ func TestMetricOperation_Gague_Update(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperation(r, m, log)
+	handler.AddMetricOperations(r, m, log)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
