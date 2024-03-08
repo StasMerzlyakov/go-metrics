@@ -8,22 +8,22 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewStorage(logger *zap.SugaredLogger, databaseUrl string) *storage {
+func NewStorage(logger *zap.SugaredLogger, databaseURL string) *storage {
 	return &storage{
-		databaseUrl: databaseUrl,
+		databaseURL: databaseURL,
 		logger:      logger,
 	}
 }
 
 type storage struct {
 	db          *sql.DB
-	databaseUrl string
+	databaseURL string
 	logger      *zap.SugaredLogger
 }
 
 func (st *storage) Start(ctx context.Context) error {
 
-	if db, err := sql.Open("pgx", st.databaseUrl); err != nil {
+	if db, err := sql.Open("pgx", st.databaseURL); err != nil {
 		st.logger.Infow("Start", "status", "error", "msg", err.Error())
 		return err
 	} else {
