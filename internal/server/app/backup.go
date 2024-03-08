@@ -1,6 +1,7 @@
-package usecase
+package app
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -8,14 +9,15 @@ import (
 	"go.uber.org/zap"
 )
 
+//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . AllMetricsStorage,BackupFormatter
 type AllMetricsStorage interface {
-	SetAllMetrics(in []domain.Metrics) error
-	GetAllMetrics() ([]domain.Metrics, error)
+	SetAllMetrics(ctx context.Context, in []domain.Metrics) error
+	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
 }
 
 type BackupFormatter interface {
-	Write([]domain.Metrics) error
-	Read() ([]domain.Metrics, error)
+	Write(ctx context.Context, in []domain.Metrics) error
+	Read(ctx context.Context) ([]domain.Metrics, error)
 }
 
 func NewBackup(suga *zap.SugaredLogger, storage AllMetricsStorage, formatter BackupFormatter) *backUper {
@@ -32,22 +34,22 @@ type backUper struct {
 	formatter BackupFormatter
 }
 
-func (bU *backUper) RestoreBackUp() error {
-	metrics, err := bU.formatter.Read()
+func (bU *backUper) RestoreBackUp(ctx context.Context) error {
+	metrics, err := bU.formatter.Read(ctx)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		panic(err)
 	}
 
-	return bU.storage.SetAllMetrics(metrics)
+	return bU.storage.SetAllMetrics(ctx, metrics)
 }
 
-func (bU *backUper) DoBackUp() error {
+func (bU *backUper) DoBackUp(ctx context.Context) error {
 
-	metrics, err := bU.storage.GetAllMetrics()
+	metrics, err := bU.storage.GetAllMetrics(ctx)
 	if err != nil {
 		return err
 	}
-	err = bU.formatter.Write(metrics)
+	err = bU.formatter.Write(ctx, metrics)
 	if err != nil {
 		return err
 	}

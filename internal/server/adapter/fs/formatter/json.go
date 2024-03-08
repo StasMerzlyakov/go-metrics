@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +28,7 @@ type jsonFormatter struct {
 	logger          *zap.SugaredLogger
 }
 
-func (jf *jsonFormatter) Write(metricses []domain.Metrics) error {
+func (jf *jsonFormatter) Write(ctx context.Context, metricses []domain.Metrics) error {
 	if jf.fileStoragePath == "" {
 		jf.logger.Errorw("Write", "status", "error", "msg", "fileStoragePath is not specified")
 		return os.ErrNotExist
@@ -60,7 +61,7 @@ func (jf *jsonFormatter) Write(metricses []domain.Metrics) error {
 	jf.logger.Infow("Write", "status", "ok", "msg", fmt.Sprintf("metrics stored into file %v", jf.fileStoragePath))
 	return nil
 }
-func (jf *jsonFormatter) Read() ([]domain.Metrics, error) {
+func (jf *jsonFormatter) Read(ctx context.Context) ([]domain.Metrics, error) {
 
 	var result []domain.Metrics
 

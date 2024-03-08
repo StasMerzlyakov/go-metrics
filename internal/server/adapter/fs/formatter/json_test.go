@@ -1,6 +1,7 @@
 package formatter_test
 
 import (
+	"context"
 	"os"
 	"reflect"
 	"testing"
@@ -56,14 +57,15 @@ var toWrite = []domain.Metrics{
 func TestJsonFormatter(t *testing.T) {
 
 	logger := getLogger()
+	ctx := context.Background()
 
 	// Файл не указан
 	jF := formatter.NewJSON(logger, "")
-	restored, err := jF.Read()
+	restored, err := jF.Read(ctx)
 	require.True(t, len(restored) == 0)
 	require.ErrorIs(t, os.ErrNotExist, err)
 
-	err = jF.Write(nil)
+	err = jF.Write(ctx, nil)
 	require.ErrorIs(t, os.ErrNotExist, err)
 
 	// Проверяем сохранение и восстановление
@@ -76,14 +78,14 @@ func TestJsonFormatter(t *testing.T) {
 
 	fileName := file.Name()
 	jF = formatter.NewJSON(logger, fileName)
-	restored, err = jF.Read()
+	restored, err = jF.Read(ctx)
 	require.Error(t, err) // EOF
 	require.True(t, len(restored) == 0)
 
-	err = jF.Write(toWrite)
+	err = jF.Write(ctx, toWrite)
 	require.NoError(t, err) // EOF
 
-	restored, err = jF.Read()
+	restored, err = jF.Read(ctx)
 	require.NoError(t, err)
 	require.True(t, reflect.DeepEqual(toWrite, restored))
 }

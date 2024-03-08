@@ -325,7 +325,7 @@ func (h *metricOperationAdapter) extractFloat64(w http.ResponseWriter, req *http
 	action := h.getAction()
 
 	valueStr := chi.URLParam(req, "value")
-	value, err := ExtractFloat64(valueStr)
+	value, err := domain.ExtractFloat64(valueStr)
 	if err != nil {
 		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -338,7 +338,7 @@ func (h *metricOperationAdapter) extractInt64(w http.ResponseWriter, req *http.R
 	action := h.getAction()
 
 	valueStr := chi.URLParam(req, "value")
-	value, err := ExtractInt64(valueStr)
+	value, err := domain.ExtractInt64(valueStr)
 	if err != nil {
 		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)

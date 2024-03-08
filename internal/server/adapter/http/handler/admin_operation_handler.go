@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"runtime"
+	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
@@ -39,12 +40,18 @@ func (h *adminOperationAdpater) handlerAppError(err error, w http.ResponseWriter
 	pc, _, _, _ := runtime.Caller(1)
 	action := runtime.FuncForPC(pc).Name()
 
+	// Получаем строку вида "github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler.(*adminOperationAdpater).Ping"
+	lst := strings.Split(action, ".")
+	if len(lst) > 1 {
+		action = lst[len(lst)-1]
+	}
+
 	if errors.Is(err, domain.ErrDataFormat) {
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else {
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -1,36 +1,24 @@
-package usecase_test
+package app_test
 
 import (
 	"errors"
 	"testing"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/app/mocks"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/usecase"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
-type mockStorage struct {
-}
-
-func (*mockStorage) SetAllMetrics(in []domain.Metrics) error {
-	return nil
-}
-func (*mockStorage) GetAllMetrics() ([]domain.Metrics, error) {
-	return nil, nil
-}
-func (*mockStorage) Set(m *domain.Metrics) error {
-	return nil
-}
-func (*mockStorage) Add(m *domain.Metrics) error {
-	return nil
-}
-func (*mockStorage) Get(id string, mType domain.MetricType) (*domain.Metrics, error) {
-	return nil, nil
-}
-
 func TestCheckName(t *testing.T) {
 
-	mc := usecase.NewMetrics(&mockStorage{})
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockStorage(ctrl)
+
+	mc := app.NewMetrics(m)
 
 	testCases := []struct {
 		name   string
@@ -87,7 +75,13 @@ func TestCheckName(t *testing.T) {
 }
 
 func TestCheckMetrics(t *testing.T) {
-	mc := usecase.NewMetrics(&mockStorage{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockStorage(ctrl)
+
+	mc := app.NewMetrics(m)
 
 	testCases := []struct {
 		name  string

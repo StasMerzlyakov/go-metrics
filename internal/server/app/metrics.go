@@ -1,6 +1,7 @@
-package usecase
+package app
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
@@ -9,12 +10,13 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
+//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . Storage
 type Storage interface {
-	SetAllMetrics(in []domain.Metrics) error
-	GetAllMetrics() ([]domain.Metrics, error)
-	Set(m *domain.Metrics) error
-	Add(m *domain.Metrics) error
-	Get(id string, mType domain.MetricType) (*domain.Metrics, error)
+	SetAllMetrics(ctx context.Context, marr []domain.Metrics) error
+	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
+	Set(ctx context.Context, m *domain.Metrics) error
+	Add(ctx context.Context, m *domain.Metrics) error
+	Get(ctx context.Context, id string, mType domain.MetricType) (*domain.Metrics, error)
 }
 
 type metricsUseCase struct {
@@ -69,7 +71,7 @@ func (mc *metricsUseCase) CheckMetrics(m *domain.Metrics) error {
 	return nil
 }
 
-func (mc *metricsUseCase) SetAllMetrics(in []domain.Metrics) error {
+func (mc *metricsUseCase) SetAllMetrics(ctx context.Context, in []domain.Metrics) error {
 	// Проверка данных
 	for _, m := range in {
 		err := mc.CheckMetrics(&m)
@@ -78,28 +80,28 @@ func (mc *metricsUseCase) SetAllMetrics(in []domain.Metrics) error {
 		}
 	}
 
-	return mc.storage.SetAllMetrics(in)
+	return mc.storage.SetAllMetrics(ctx, in)
 }
 
-func (mc *metricsUseCase) GetAllMetrics() ([]domain.Metrics, error) {
-	return mc.storage.GetAllMetrics()
+func (mc *metricsUseCase) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) {
+	return mc.storage.GetAllMetrics(ctx)
 }
 
-func (mc *metricsUseCase) GetCounter(name string) (*domain.Metrics, error) {
+func (mc *metricsUseCase) GetCounter(ctx context.Context, name string) (*domain.Metrics, error) {
 	if !mc.CheckName(name) {
 		return nil, errors.Wrap(domain.ErrDataFormat, fmt.Sprintf("wrong metric ID %v", name))
 	}
-	return mc.storage.Get(name, domain.CounterType)
+	return mc.storage.Get(ctx, name, domain.CounterType)
 }
 
-func (mc *metricsUseCase) GetGauge(name string) (*domain.Metrics, error) {
+func (mc *metricsUseCase) GetGauge(ctx context.Context, name string) (*domain.Metrics, error) {
 	if !mc.CheckName(name) {
 		return nil, errors.Wrap(domain.ErrDataFormat, fmt.Sprintf("wrong metric ID %v", name))
 	}
-	return mc.storage.Get(name, domain.GaugeType)
+	return mc.storage.Get(ctx, name, domain.GaugeType)
 }
 
-func (mc *metricsUseCase) AddCounter(m *domain.Metrics) error {
+func (mc *metricsUseCase) AddCounter(ctx context.Context, m *domain.Metrics) error {
 	if err := mc.CheckMetrics(m); err != nil {
 		return err
 	}
@@ -108,37 +110,37 @@ func (mc *metricsUseCase) AddCounter(m *domain.Metrics) error {
 		return fmt.Errorf("unexpected MType %v, expected %v", m.MType, domain.CounterType)
 	}
 
-	if err := mc.storage.Add(m); err != nil {
+	if err := mc.storage.Add(ctx, m); err != nil {
 		return err
 	}
 
-	if newValue, err := mc.storage.Get(m.ID, m.MType); err != nil {
+	if newValue, err := mc.storage.Get(ctx, m.ID, m.MType); err != nil {
 		return err
 	} else {
 		delta := *newValue.Delta
 		m.Delta = &delta
 	}
 
-	for _, lst := range mc.changeListeners {
-		lst.Refresh(m)
+	for _, changeListenerFn := range mc.changeListeners {
+		changeListenerFn(ctx, m)
 	}
 
 	return nil
 }
 
-func (mc *metricsUseCase) SetGauge(m *domain.Metrics) error {
+func (mc *metricsUseCase) SetGauge(ctx context.Context, m *domain.Metrics) error {
 	if err := mc.CheckMetrics(m); err != nil {
 		return err
 	}
 	if m.MType != domain.GaugeType {
 		return fmt.Errorf("unexpected MType %v, expected %v", m.MType, domain.GaugeType)
 	}
-	if err := mc.storage.Set(m); err != nil {
+	if err := mc.storage.Set(ctx, m); err != nil {
 		return err
 	}
 
-	for _, lst := range mc.changeListeners {
-		lst.Refresh(m)
+	for _, changeListenerFn := range mc.changeListeners {
+		changeListenerFn(ctx, m)
 	}
 
 	return nil

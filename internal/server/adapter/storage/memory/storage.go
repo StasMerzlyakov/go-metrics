@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
@@ -18,7 +19,7 @@ type storage struct {
 	gaugeStorage   map[string]float64
 }
 
-func (st *storage) SetAllMetrics(in []domain.Metrics) error {
+func (st *storage) SetAllMetrics(ctx context.Context, in []domain.Metrics) error {
 	newCounterStorage := make(map[string]int64)
 	newGaugeStorage := make(map[string]float64)
 
@@ -40,7 +41,7 @@ func (st *storage) SetAllMetrics(in []domain.Metrics) error {
 	return nil
 }
 
-func (st *storage) GetAllMetrics() ([]domain.Metrics, error) {
+func (st *storage) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) {
 
 	var out []domain.Metrics
 
@@ -65,7 +66,7 @@ func (st *storage) GetAllMetrics() ([]domain.Metrics, error) {
 	return out, nil
 }
 
-func (st *storage) Set(m *domain.Metrics) error {
+func (st *storage) Set(ctx context.Context, m *domain.Metrics) error {
 	switch m.MType {
 	case domain.CounterType:
 		delta := *m.Delta
@@ -79,7 +80,7 @@ func (st *storage) Set(m *domain.Metrics) error {
 	return nil
 }
 
-func (st *storage) Add(m *domain.Metrics) error {
+func (st *storage) Add(ctx context.Context, m *domain.Metrics) error {
 	switch m.MType {
 	case domain.CounterType:
 		delta := *m.Delta
@@ -109,7 +110,7 @@ func (st *storage) Add(m *domain.Metrics) error {
 	}
 	return nil
 }
-func (st *storage) Get(id string, mType domain.MetricType) (*domain.Metrics, error) {
+func (st *storage) Get(ctx context.Context, id string, mType domain.MetricType) (*domain.Metrics, error) {
 	switch mType {
 	case domain.CounterType:
 		curValue, ok := st.counterStorage[id]

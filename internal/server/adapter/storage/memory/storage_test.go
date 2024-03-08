@@ -1,10 +1,11 @@
 package memory_test
 
 import (
+	"context"
 	"testing"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/storage/memory"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,15 +43,17 @@ func TestMemoryStorageStoreAndLoad(t *testing.T) {
 		{MType: domain.GaugeType, ID: "TotalAlloc", Value: domain.ValuePtr(1.123)},
 	}
 
+	ctx := context.Background()
+
 	storage := memory.NewStorage()
-	out, err := storage.GetAllMetrics()
+	out, err := storage.GetAllMetrics(ctx)
 	require.NoError(t, err)
 	require.True(t, len(out) == 0)
 
-	err = storage.SetAllMetrics(toLoad)
+	err = storage.SetAllMetrics(ctx, toLoad)
 	require.NoError(t, err)
 
-	out, err = storage.GetAllMetrics()
+	out, err = storage.GetAllMetrics(ctx)
 	require.NoError(t, err)
 	require.Equal(t, len(toLoad), len(out))
 }
@@ -67,18 +70,20 @@ func TestMemoryStorageGaugeOperations(t *testing.T) {
 		Value: domain.ValuePtr(2),
 	}
 
-	ms, err := storage.Get(GagueID, domain.CounterType)
+	ctx := context.Background()
+
+	ms, err := storage.Get(ctx, GagueID, domain.CounterType)
 	require.NoError(t, err)
 	require.Nil(t, ms)
 
-	ms, err = storage.Get(GagueID, domain.GaugeType)
+	ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
 	require.NoError(t, err)
 	require.Nil(t, ms)
 
-	err = storage.Set(mConst)
+	err = storage.Set(ctx, mConst)
 	require.NoError(t, err)
 
-	ms, err = storage.Get(GagueID, domain.GaugeType)
+	ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
 	require.NoError(t, err)
 	require.NotNil(t, ms)
 	require.Equal(t, ms.ID, GagueID)
@@ -87,13 +92,13 @@ func TestMemoryStorageGaugeOperations(t *testing.T) {
 	require.Equal(t, float64(2), *ms.Value)
 	require.Nil(t, ms.Delta)
 
-	ms, err = storage.Get(GagueID, domain.CounterType)
+	ms, err = storage.Get(ctx, GagueID, domain.CounterType)
 	require.NoError(t, err)
 	require.Nil(t, ms)
 
-	err = storage.Set(mConst)
+	err = storage.Set(ctx, mConst)
 	require.NoError(t, err)
-	ms, err = storage.Get(GagueID, domain.GaugeType)
+	ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
 	require.NoError(t, err)
 	require.NotNil(t, ms)
 	require.Equal(t, ms.ID, GagueID)
@@ -102,9 +107,9 @@ func TestMemoryStorageGaugeOperations(t *testing.T) {
 	require.Equal(t, float64(2), *ms.Value)
 	require.Nil(t, ms.Delta)
 
-	err = storage.Add(mConst)
+	err = storage.Add(ctx, mConst)
 	require.NoError(t, err)
-	ms, err = storage.Get(GagueID, domain.GaugeType)
+	ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
 	require.NoError(t, err)
 	require.NotNil(t, ms)
 	require.Equal(t, ms.ID, GagueID)
@@ -126,18 +131,20 @@ func TestMemoryStorageCounterOperations(t *testing.T) {
 		Delta: domain.DeltaPtr(2),
 	}
 
-	ms, err := storage.Get(CounterID, domain.CounterType)
+	ctx := context.Background()
+
+	ms, err := storage.Get(ctx, CounterID, domain.CounterType)
 	require.NoError(t, err)
 	require.Nil(t, ms)
 
-	ms, err = storage.Get(CounterID, domain.GaugeType)
+	ms, err = storage.Get(ctx, CounterID, domain.GaugeType)
 	require.NoError(t, err)
 	require.Nil(t, ms)
 
-	err = storage.Set(mConst)
+	err = storage.Set(ctx, mConst)
 	require.NoError(t, err)
 
-	ms, err = storage.Get(CounterID, domain.CounterType)
+	ms, err = storage.Get(ctx, CounterID, domain.CounterType)
 	require.NoError(t, err)
 	require.NotNil(t, ms)
 	require.Equal(t, ms.ID, CounterID)
@@ -146,13 +153,13 @@ func TestMemoryStorageCounterOperations(t *testing.T) {
 	require.Equal(t, int64(2), *ms.Delta)
 	require.Nil(t, ms.Value)
 
-	ms, err = storage.Get(CounterID, domain.GaugeType)
+	ms, err = storage.Get(ctx, CounterID, domain.GaugeType)
 	require.NoError(t, err)
 	require.Nil(t, ms)
 
-	err = storage.Set(mConst)
+	err = storage.Set(ctx, mConst)
 	require.NoError(t, err)
-	ms, err = storage.Get(CounterID, domain.CounterType)
+	ms, err = storage.Get(ctx, CounterID, domain.CounterType)
 	require.NoError(t, err)
 	require.NotNil(t, ms)
 	require.Equal(t, ms.ID, CounterID)
@@ -161,9 +168,9 @@ func TestMemoryStorageCounterOperations(t *testing.T) {
 	require.Equal(t, int64(2), *ms.Delta)
 	require.Nil(t, ms.Value)
 
-	err = storage.Add(mConst)
+	err = storage.Add(ctx, mConst)
 	require.NoError(t, err)
-	ms, err = storage.Get(CounterID, domain.CounterType)
+	ms, err = storage.Get(ctx, CounterID, domain.CounterType)
 	require.NoError(t, err)
 	require.NotNil(t, ms)
 	require.Equal(t, ms.ID, CounterID)

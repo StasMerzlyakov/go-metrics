@@ -57,11 +57,5 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if srvConf.DatabaseDSN == "" {
-		flag.Usage()
-		return nil, fmt.Errorf("flag -d is not specified")
-	}
-
 	return srvConf, nil
 }

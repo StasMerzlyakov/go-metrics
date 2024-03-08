@@ -11,16 +11,21 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/formatter"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/storage/memory"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/usecase"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
+	"github.com/go-chi/chi/v5"
+
 	"go.uber.org/zap"
 )
 
 type Server interface {
 	Start(ctx context.Context)
-	WaitDone()
+	Shutdown(ctx context.Context)
 }
 
 func createMiddleWareList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
@@ -51,21 +56,45 @@ func main() {
 	sugarLog := logger.Sugar()
 
 	// Сборка сервера
-	storage := memory.NewStorage()
+	memStorage := memory.NewStorage()
 
-	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
-	backup := usecase.NewBackup(sugarLog, storage, backupFomratter)
+	httpHandler := chi.NewMux()
 
-	metrics := usecase.NewMetrics(storage)
-
+	// мидлы
 	mwList := createMiddleWareList(sugarLog)
-	httpHandler := handler.NewHTTP(metrics, sugarLog, mwList...)
+	middleware.Add(httpHandler, mwList...)
+
+	metricApp := app.NewMetrics(memStorage)
+	handler.AddMetricOperations(httpHandler, metricApp, sugarLog)
+
+	pgStorage := postgres.NewStorage(sugarLog, srvConf.DatabaseDSN)
+
+	adminApp := app.NewAdminApp(sugarLog, pgStorage)
+	handler.AddAdminOperations(httpHandler, adminApp, sugarLog)
+
+	// бэкап
+	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
+	backup := app.NewBackup(sugarLog, memStorage, backupFomratter)
+
+	// проверяем - нужен ли синхронный бэкап
+	doSyncBackup := srvConf.StoreInterval == 0
+
+	if doSyncBackup {
+		sugarLog.Warnf("NewMetricsServer", "msg", "backup work in sync mode")
+		// синхронный бэкап реализован через мехинизм листенеров изменений
+		//  (изменение данных может происходить и не только через http)
+		metricApp.AddListener(func(ctx context.Context, m *domain.Metrics) error {
+			return backup.DoBackUp(ctx)
+		})
+	}
+
+	resources := []server.StartStopListener{pgStorage}
 
 	var server Server = server.NewMetricsServer(srvConf,
 		sugarLog,
 		httpHandler,
-		metrics,
-		backup)
+		backup,
+		resources...)
 
 	// Запуск сервера
 	ctx, cancelFn := context.WithCancel(context.Background())
@@ -75,7 +104,8 @@ func main() {
 	server.Start(ctx)
 	defer func() {
 		cancelFn()
-		server.WaitDone()
+		shutdownCtx := context.TODO()
+		server.Shutdown(shutdownCtx)
 	}()
 	<-exit
 }

@@ -1,9 +1,9 @@
-package handler_test
+package domain_test
 
 import (
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,7 +52,7 @@ func TestExtractFloat64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			value, err := handler.ExtractFloat64(tt.input)
+			value, err := domain.ExtractFloat64(tt.input)
 			assert.Equal(t, tt.result.value, value)
 			assert.Equal(t, tt.result.isSuccessExpected, err == nil)
 		})
@@ -98,7 +98,7 @@ func TestExtractInt64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			value, err := handler.ExtractInt64(tt.input)
+			value, err := domain.ExtractInt64(tt.input)
 			assert.Equal(t, tt.result.value, value)
 			assert.Equal(t, tt.result.isSuccessExpected, err == nil)
 		})

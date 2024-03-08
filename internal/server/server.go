@@ -7,119 +7,147 @@ import (
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"go.uber.org/zap"
 )
 
 type Backuper interface {
-	RestoreBackUp() error
-	DoBackUp() error
+	RestoreBackUp(ctx context.Context) error
+	DoBackUp(ctx context.Context) error
 }
 
-type ChangeListenerHolder interface {
-	AddListener(changeListener domain.ChangeListener)
+type StartStopListener interface {
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
 }
 
 func NewMetricsServer(
 	config *config.ServerConfiguration,
 	sugar *zap.SugaredLogger,
 	httpHandler http.Handler,
-	holder ChangeListenerHolder,
 	backUper Backuper,
+	resources ...StartStopListener,
 ) *meterServer {
 
 	sugar.Infow("ServerConfig", "config", config)
 
 	// restore backup
+	ctx := context.TODO()
 	if backUper != nil && config.Restore {
-		if err := backUper.RestoreBackUp(); err != nil {
+		if err := backUper.RestoreBackUp(ctx); err != nil {
 			panic(err)
 		}
 	}
 
 	// проверяем - нужен ли синхронный бэкап
 	doSyncBackup := config.StoreInterval == 0
-	if doSyncBackup && backUper != nil {
-		sugar.Warnw("NewMetricsServer", "msg", "backup work in sync mode")
-		// синхронный бэкап реализован через мехинизм листенеров изменений
-		//  (изменение данных может происходить и не только через http)
-		holder.AddListener(&backupSyncListener{
-			backUper: backUper,
-		})
+
+	var startStopListeners []StartStopListener
+
+	if backUper != nil && !doSyncBackup {
+		backupListener := &backupListener{
+			backUper:                backUper,
+			backaupStoreIntervalSec: config.StoreInterval,
+			sugar:                   sugar,
+		}
+		startStopListeners = append(startStopListeners, backupListener)
 	}
 
-	return &meterServer{
+	srvListener := &httpServerListener{
 		srv: &http.Server{
 			Addr:        config.URL,
 			Handler:     httpHandler,
 			ReadTimeout: 0,
 			IdleTimeout: 0,
 		},
-		doSyncBackup:            doSyncBackup,
-		backaupStoreIntervalSec: config.StoreInterval,
-		sugar:                   sugar,
-		backUper:                backUper,
+		sugar: sugar,
+	}
+
+	startStopListeners = append(startStopListeners, srvListener)
+	startStopListeners = append(startStopListeners, resources...)
+
+	return &meterServer{
+		startStopListeners: startStopListeners,
+		sugar:              sugar,
 	}
 }
 
 type meterServer struct {
-	sugar                   *zap.SugaredLogger
-	srv                     *http.Server
-	wg                      sync.WaitGroup
-	backUper                Backuper
-	startContext            context.Context
-	backaupStoreIntervalSec uint
-	doSyncBackup            bool
-}
-
-func (s *meterServer) ServeBackup(ctx context.Context) error {
-
-	storeInterval := time.Duration(s.backaupStoreIntervalSec) * time.Second
-	for {
-		select {
-		case <-ctx.Done():
-			s.sugar.Infow("Run", "msg", "backup finished")
-			return nil
-
-		case <-time.After(storeInterval):
-			if err := s.backUper.DoBackUp(); err != nil {
-				s.sugar.Fatalw("DoBackUp", "msg", err.Error())
-			}
-		}
-	}
+	sugar              *zap.SugaredLogger
+	startStopListeners []StartStopListener
 }
 
 func (s *meterServer) Start(startContext context.Context) {
-	s.startContext = startContext
-	s.wg.Add(2)
-	go func() {
-		defer s.wg.Done()
-		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-			s.sugar.Fatalw("srv.ListenAndServe", "msg", err.Error())
-		}
-	}()
-	if s.backUper != nil && !s.doSyncBackup {
-		go func() {
-			defer s.wg.Done()
 
-			if err := s.ServeBackup(startContext); err != nil {
-				s.sugar.Fatalw("ServeBackup", "msg", err.Error())
+	for _, lst := range s.startStopListeners {
+		startStopListener := lst
+		go func() {
+			if err := startStopListener.Start(startContext); err != nil {
+				panic(err)
 			}
 		}()
 	}
-	s.sugar.Infof("Server started")
+
+	s.sugar.Infow("Server started")
 }
 
-func (s *meterServer) WaitDone() {
-	s.srv.Shutdown(s.startContext)
-	s.wg.Wait()
-	s.sugar.Infof("WaitDone")
+func (s *meterServer) Shutdown(ctx context.Context) {
+
+	var wg sync.WaitGroup
+
+	// TODO - подумать над управлением зависимостями между листенерами и порядком вызова
+	for _, lst := range s.startStopListeners {
+		startStopListener := lst
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			startStopListener.Stop(ctx)
+		}()
+
+	}
+
+	wg.Wait()
+	s.sugar.Infow("Shutdown", "msg", "complete")
 }
 
-type backupSyncListener struct {
-	backUper Backuper
+type backupListener struct {
+	backUper                Backuper
+	backaupStoreIntervalSec uint
+	sugar                   *zap.SugaredLogger
 }
 
-func (bsl *backupSyncListener) Refresh(*domain.Metrics) error {
-	return bsl.backUper.DoBackUp()
+func (backRes *backupListener) Start(ctx context.Context) error {
+	storeInterval := time.Duration(backRes.backaupStoreIntervalSec) * time.Second
+	for {
+		select {
+		case <-ctx.Done():
+			backRes.sugar.Infow("Run", "msg", "backup finished")
+			return nil
+
+		case <-time.After(storeInterval):
+			if err := backRes.backUper.DoBackUp(ctx); err != nil {
+				backRes.sugar.Fatalw("DoBackUp", "msg", err.Error())
+			}
+		}
+	}
+}
+
+func (backRes *backupListener) Stop(ctx context.Context) error {
+	return nil
+}
+
+type httpServerListener struct {
+	srv   *http.Server
+	sugar *zap.SugaredLogger
+}
+
+func (hList *httpServerListener) Start(ctx context.Context) error {
+	if err := hList.srv.ListenAndServe(); err != http.ErrServerClosed {
+		hList.sugar.Fatalw("srv.ListenAndServe", "msg", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (hList *httpServerListener) Stop(ctx context.Context) error {
+	return hList.srv.Shutdown(ctx)
 }
