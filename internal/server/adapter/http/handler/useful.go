@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 	"strconv"
@@ -51,6 +50,7 @@ func createHTTPHandler(httpAdapter *httpAdapter, middlewares ...func(http.Handle
 		r.Get("/gauge/{name}", httpAdapter.GetGauge)
 		r.Get("/counter/{name}", httpAdapter.GetCounter)
 	})
+
 	return r
 }
 
@@ -206,28 +206,9 @@ func (h *httpAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
 
 	w.Header().Set("Content-Type", TextHTML)
 
-	allMetricsViewTmpl.Execute(w, metricses)
+	allMetricsViewTmplate.Execute(w, metricses)
 	h.logger.Infow("AllMetrics", "status", "ok")
 }
-
-var allMetricsViewTmpl, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
-<html lang="en">
-<body>
-<table>
-    <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Value</th>
-    </tr>
-    {{ range .}}<tr>
-        <td>{{ .MType }}</td>
-        <td>{{ .ID }}</td>
-		{{if .Delta}}<td>{{ .Delta }}</td>{{else}}<td>{{ .Value }}</td>{{end}}
-    </tr>{{ end}}
-</table>
-</body>
-</html>
-`)
 
 func (h *httpAdapter) PostMetrics(w http.ResponseWriter, req *http.Request) {
 
