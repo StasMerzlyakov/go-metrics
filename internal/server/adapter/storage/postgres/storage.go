@@ -325,6 +325,12 @@ func (st *storage) getCounter(ctx context.Context, id string) (*domain.Metrics, 
 			Delta: &delta,
 		}, nil
 	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
@@ -352,6 +358,12 @@ func (st *storage) getGauge(ctx context.Context, id string) (*domain.Metrics, er
 			Value: &value,
 		}, nil
 	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
