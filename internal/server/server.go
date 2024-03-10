@@ -30,24 +30,19 @@ func NewMetricsServer(
 
 	sugar.Infow("ServerConfig", "config", config)
 
-	// restore backup
-	ctx := context.TODO()
-	if backUper != nil && config.Restore {
-		if err := backUper.RestoreBackUp(ctx); err != nil {
-			panic(err)
-		}
-	}
+	var startStopListeners []StartStopListener
+
+	startStopListeners = append(startStopListeners, resources...)
 
 	// проверяем - нужен ли синхронный бэкап
 	doSyncBackup := config.StoreInterval == 0
-
-	var startStopListeners []StartStopListener
 
 	if backUper != nil && !doSyncBackup {
 		backupListener := &backupListener{
 			backUper:                backUper,
 			backaupStoreIntervalSec: config.StoreInterval,
 			sugar:                   sugar,
+			restore:                 config.Restore,
 		}
 		startStopListeners = append(startStopListeners, backupListener)
 	}
@@ -63,7 +58,6 @@ func NewMetricsServer(
 	}
 
 	startStopListeners = append(startStopListeners, srvListener)
-	startStopListeners = append(startStopListeners, resources...)
 
 	return &meterServer{
 		startStopListeners: startStopListeners,
@@ -113,9 +107,18 @@ type backupListener struct {
 	backUper                Backuper
 	backaupStoreIntervalSec uint
 	sugar                   *zap.SugaredLogger
+	restore                 bool
 }
 
 func (backRes *backupListener) Start(ctx context.Context) error {
+
+	// restore backup
+	if backRes.restore {
+		if err := backRes.backUper.RestoreBackUp(ctx); err != nil {
+			panic(err)
+		}
+	}
+
 	storeInterval := time.Duration(backRes.backaupStoreIntervalSec) * time.Second
 	for {
 		select {

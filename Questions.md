@@ -16,3 +16,5 @@
 - Вопрос по api - "net/http".Server.Shutdown(ctx context.Context) для чего передается контекст? для возможности cancel контекста? (например по по таймауту)
 
 - BoolVar - работает хитро - значение по-умолчанию "true" ????!!! (сделал через flag.Var - не усложняю ли)
+
+- SQL transaction, bulk insert, update на database/sql или лучше использовать реализацию под конкретную DB

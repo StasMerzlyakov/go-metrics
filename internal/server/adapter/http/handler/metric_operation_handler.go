@@ -314,7 +314,7 @@ func (h *metricOperationAdapter) extractName(w http.ResponseWriter, req *http.Re
 	name := chi.URLParam(req, "name")
 	if name == "" {
 		err := errors.New("name is not set")
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return "", false
 	}
@@ -327,7 +327,7 @@ func (h *metricOperationAdapter) extractFloat64(w http.ResponseWriter, req *http
 	valueStr := chi.URLParam(req, "value")
 	value, err := domain.ExtractFloat64(valueStr)
 	if err != nil {
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return 0, false
 	}
@@ -340,7 +340,7 @@ func (h *metricOperationAdapter) extractInt64(w http.ResponseWriter, req *http.R
 	valueStr := chi.URLParam(req, "value")
 	value, err := domain.ExtractInt64(valueStr)
 	if err != nil {
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return 0, false
 	}
@@ -360,11 +360,11 @@ func (h *metricOperationAdapter) handlerAppError(err error, w http.ResponseWrite
 	action := runtime.FuncForPC(pc).Name()
 
 	if errors.Is(err, domain.ErrDataFormat) {
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else {
-		h.logger.Infow(action, "status", "error", "msg", "err", err.Error())
+		h.logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

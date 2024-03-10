@@ -37,6 +37,12 @@ func createMiddleWareList(log *zap.SugaredLogger) []func(http.Handler) http.Hand
 	}
 }
 
+type FullStorage interface {
+	app.Storage
+	app.Pinger
+	server.StartStopListener
+}
+
 func main() {
 
 	// Конфигурация
@@ -56,7 +62,13 @@ func main() {
 	sugarLog := logger.Sugar()
 
 	// Сборка сервера
-	memStorage := memory.NewStorage()
+	var storage FullStorage
+
+	if srvConf.DatabaseDSN != "" {
+		storage = postgres.NewStorage(sugarLog, srvConf.DatabaseDSN)
+	} else {
+		storage = memory.NewStorage()
+	}
 
 	httpHandler := chi.NewMux()
 
@@ -64,17 +76,15 @@ func main() {
 	mwList := createMiddleWareList(sugarLog)
 	middleware.Add(httpHandler, mwList...)
 
-	metricApp := app.NewMetrics(memStorage)
+	metricApp := app.NewMetrics(storage)
 	handler.AddMetricOperations(httpHandler, metricApp, sugarLog)
 
-	pgStorage := postgres.NewStorage(sugarLog, srvConf.DatabaseDSN)
-
-	adminApp := app.NewAdminApp(sugarLog, pgStorage)
+	adminApp := app.NewAdminApp(sugarLog, storage)
 	handler.AddAdminOperations(httpHandler, adminApp, sugarLog)
 
 	// бэкап
 	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
-	backup := app.NewBackup(sugarLog, memStorage, backupFomratter)
+	backup := app.NewBackup(sugarLog, storage, backupFomratter)
 
 	// проверяем - нужен ли синхронный бэкап
 	doSyncBackup := srvConf.StoreInterval == 0
@@ -88,7 +98,7 @@ func main() {
 		})
 	}
 
-	resources := []server.StartStopListener{pgStorage}
+	resources := []server.StartStopListener{storage}
 
 	var server Server = server.NewMetricsServer(srvConf,
 		sugarLog,

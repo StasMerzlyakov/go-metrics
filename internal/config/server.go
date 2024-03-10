@@ -44,7 +44,7 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	restoreConf := &RestoreConfiguration{
 		Restore: true, // Значение по-умолчанию
 	}
-	flag.Var(restoreConf, "r", "is backap restore need")
+	flag.Var(restoreConf, "r", "is backup restore need")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
