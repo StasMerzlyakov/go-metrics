@@ -231,6 +231,84 @@ func (st *storage) Close(ctx context.Context) error {
 	}
 }
 
+func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) error {
+	tx, err := st.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	counterStmt, err := tx.PrepareContext(ctx, `
+	INSERT INTO counter(name, value) VALUES ($1, $2) ON CONFLICT(name) 
+		DO UPDATE SET value = EXCLUDED.value`)
+	if err != nil {
+		return err
+	}
+
+	gaugeStmt, err := tx.PrepareContext(ctx, `
+	INSERT INTO gauge(name, value) VALUES ($1, $2) ON CONFLICT(name)
+		DO UPDATE SET value = EXCLUDED.value`)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range metric {
+		switch m.MType {
+		case domain.CounterType:
+			_, err := counterStmt.ExecContext(ctx, m.ID, *m.Delta)
+			if err != nil {
+				return err
+			}
+		case domain.GaugeType:
+			_, err := gaugeStmt.ExecContext(ctx, m.ID, *m.Delta)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (st *storage) AddMetrics(ctx context.Context, metric []domain.Metrics) error {
+	tx, err := st.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	counterStmt, err := tx.PrepareContext(ctx, `
+	INSERT INTO counter(name, value) VALUES ($1, $2) ON CONFLICT(name) 
+		DO UPDATE SET value = counter.value + EXCLUDED.value`)
+	if err != nil {
+		return err
+	}
+
+	gaugeStmt, err := tx.PrepareContext(ctx, `
+	INSERT INTO gauge(name, value) VALUES ($1, $2) ON CONFLICT(name)
+		DO UPDATE SET value = gauge.value + EXCLUDED.value`)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range metric {
+		switch m.MType {
+		case domain.CounterType:
+			_, err := counterStmt.ExecContext(ctx, m.ID, *m.Delta)
+			if err != nil {
+				return err
+			}
+		case domain.GaugeType:
+			_, err := gaugeStmt.ExecContext(ctx, m.ID, *m.Delta)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (st *storage) insertCounterList(ctx context.Context, counterList []counter) error {
 
 	if len(counterList) == 0 {

@@ -49,6 +49,20 @@ func (mr *MockStorageMockRecorder) Add(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStorage)(nil).Add), arg0, arg1)
 }
 
+// AddMetrics mocks base method.
+func (m *MockStorage) AddMetrics(arg0 context.Context, arg1 []domain.Metrics) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddMetrics", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddMetrics indicates an expected call of AddMetrics.
+func (mr *MockStorageMockRecorder) AddMetrics(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMetrics", reflect.TypeOf((*MockStorage)(nil).AddMetrics), arg0, arg1)
+}
+
 // Get mocks base method.
 func (m *MockStorage) Get(arg0 context.Context, arg1 string, arg2 domain.MetricType) (*domain.Metrics, error) {
 	m.ctrl.T.Helper()
@@ -105,4 +119,18 @@ func (m *MockStorage) SetAllMetrics(arg0 context.Context, arg1 []domain.Metrics)
 func (mr *MockStorageMockRecorder) SetAllMetrics(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAllMetrics", reflect.TypeOf((*MockStorage)(nil).SetAllMetrics), arg0, arg1)
+}
+
+// SetMetrics mocks base method.
+func (m *MockStorage) SetMetrics(arg0 context.Context, arg1 []domain.Metrics) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetMetrics", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetMetrics indicates an expected call of SetMetrics.
+func (mr *MockStorageMockRecorder) SetMetrics(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMetrics", reflect.TypeOf((*MockStorage)(nil).SetMetrics), arg0, arg1)
 }

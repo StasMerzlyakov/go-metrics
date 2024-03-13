@@ -304,6 +304,53 @@ func TestMetricOperation_Gague_Update(t *testing.T) {
 	require.Equal(t, *metricsReq.Value, *respMetrics.Value)
 }
 
+func TestMetricOperation_PostMetrics(t *testing.T) {
+	log := logger()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockMetricApp(ctrl)
+
+	testValue := float64(123.123)
+	gaugeName := "RandomValue"
+
+	m.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, ms []domain.Metrics) error {
+			require.NotNil(t, ms)
+			require.Equal(t, 1, len(ms))
+			m := ms[0]
+			require.Nil(t, m.Delta)
+			require.NotNil(t, m.Value)
+			require.Equal(t, testValue, *m.Value)
+			return nil
+		}).Times(1)
+
+	r := chi.NewRouter()
+
+	handler.AddMetricOperations(r, m, log)
+
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	req := resty.New().R()
+	req.Method = http.MethodPost
+
+	req.URL = srv.URL + "/updates/"
+	req.Header.Add("Content-Type", handler.ApplicationJSON)
+	metricsReq := []domain.Metrics{
+		{
+			ID:    gaugeName,
+			MType: domain.GaugeType,
+			Value: domain.ValuePtr(testValue),
+		},
+	}
+
+	req.SetBody(metricsReq)
+	_, err := req.Send()
+	require.Nil(t, err)
+}
+
 func logger() *zap.SugaredLogger {
 	logger, err := zap.NewDevelopment()
 	if err != nil {

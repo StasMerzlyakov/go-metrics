@@ -107,3 +107,17 @@ func (mr *MockMetricAppMockRecorder) SetGauge(arg0, arg1 interface{}) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGauge", reflect.TypeOf((*MockMetricApp)(nil).SetGauge), arg0, arg1)
 }
+
+// Update mocks base method.
+func (m *MockMetricApp) Update(arg0 context.Context, arg1 []domain.Metrics) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockMetricAppMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockMetricApp)(nil).Update), arg0, arg1)
+}

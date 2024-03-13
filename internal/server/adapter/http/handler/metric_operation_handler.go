@@ -24,8 +24,12 @@ func AddMetricOperations(r *chi.Mux, metricApp MetricApp, log *zap.SugaredLogger
 
 	r.Get("/", adapter.AllMetrics)
 
-	r.Route("/update", func(r chi.Router) {
+	r.Route("/updates", func(r chi.Router) {
 		r.Post("/", adapter.PostMetrics)
+	})
+
+	r.Route("/update", func(r chi.Router) {
+		r.Post("/", adapter.PostMetric)
 		r.Post("/gauge/{name}/{value}", adapter.PostGauge)
 		r.Post("/gauge/{name}", StatusNotFound)
 		r.Post("/counter/{name}/{value}", adapter.PostCounter)
@@ -70,6 +74,27 @@ func (h *metricOperationAdapter) checkRequestBody(w http.ResponseWriter, req *ht
 
 func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Request) {
 	action := "PostMetrics"
+
+	if !h.isContentTypeExpected(ApplicationJSON, w, req) {
+		return
+	}
+
+	var metrics []domain.Metrics
+	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
+		h.logger.Infow(action, "status", "error", "msg", fmt.Sprintf("json decode error: %v", err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.metricApp.Update(req.Context(), metrics); err != nil {
+		h.handlerAppError(err, w)
+		return
+	}
+
+}
+
+func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
+	action := "PostMetric"
 
 	if !h.isContentTypeExpected(ApplicationJSON, w, req) {
 		return

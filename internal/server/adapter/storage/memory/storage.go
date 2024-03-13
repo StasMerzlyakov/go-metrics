@@ -149,6 +149,45 @@ func (st *storage) Ping(ctx context.Context) error {
 	return nil
 }
 
+func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) error {
+	for _, m := range metric {
+		switch m.MType {
+		case domain.GaugeType:
+			st.gaugeStorage[m.ID] = *m.Value
+
+		case domain.CounterType:
+			st.counterStorage[m.ID] = *m.Delta
+		}
+	}
+	return nil
+}
+
+func (st *storage) AddMetrics(ctx context.Context, metric []domain.Metrics) error {
+	for _, m := range metric {
+		switch m.MType {
+		case domain.GaugeType:
+			value := *m.Value
+			curValue, ok := st.gaugeStorage[m.ID]
+			if ok {
+				curValue += value
+				st.gaugeStorage[m.ID] = curValue
+			} else {
+				st.gaugeStorage[m.ID] = value
+			}
+		case domain.CounterType:
+			delta := *m.Delta
+			curValue, ok := st.counterStorage[m.ID]
+			if ok {
+				delta += curValue
+				st.counterStorage[m.ID] = delta
+			} else {
+				st.counterStorage[m.ID] = delta
+			}
+		}
+	}
+	return nil
+}
+
 func (st *storage) Close(ctx context.Context) error {
 	return nil
 }

@@ -16,6 +16,8 @@ type Storage interface {
 	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
 	Set(ctx context.Context, m *domain.Metrics) error
 	Add(ctx context.Context, m *domain.Metrics) error
+	SetMetrics(ctx context.Context, metric []domain.Metrics) error
+	AddMetrics(ctx context.Context, metric []domain.Metrics) error
 	Get(ctx context.Context, id string, mType domain.MetricType) (*domain.Metrics, error)
 }
 
@@ -141,6 +143,33 @@ func (mc *metricsUseCase) SetGauge(ctx context.Context, m *domain.Metrics) error
 
 	for _, changeListenerFn := range mc.changeListeners {
 		changeListenerFn(ctx, m)
+	}
+
+	return nil
+}
+
+func (mc *metricsUseCase) Update(ctx context.Context, mtr []domain.Metrics) error {
+	var gaugeList []domain.Metrics
+	var counterList []domain.Metrics
+
+	for _, m := range mtr {
+		if err := mc.CheckMetrics(&m); err != nil {
+			return err
+		}
+		switch m.MType {
+		case domain.CounterType:
+			counterList = append(counterList, m)
+		case domain.GaugeType:
+			gaugeList = append(gaugeList, m)
+		}
+	}
+
+	if err := mc.storage.SetMetrics(ctx, gaugeList); err != nil {
+		return err
+	}
+
+	if err := mc.storage.AddMetrics(ctx, counterList); err != nil {
+		return err
 	}
 
 	return nil

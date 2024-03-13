@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -136,4 +137,77 @@ func TestCheckMetrics(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateMetrics(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockStorage(ctrl)
+
+	m.EXPECT().SetMetrics(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, ms []domain.Metrics) error {
+			for _, m := range ms {
+				assert.Equal(t, domain.GaugeType, m.MType)
+			}
+			return nil
+		}).AnyTimes()
+
+	m.EXPECT().AddMetrics(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, ms []domain.Metrics) error {
+			for _, m := range ms {
+				assert.Equal(t, domain.CounterType, m.MType)
+			}
+			return nil
+		}).AnyTimes()
+
+	mc := app.NewMetrics(m)
+	testCases := []struct {
+		name  string
+		input []domain.Metrics
+	}{
+		{
+			"add counters",
+			[]domain.Metrics{
+				{
+					ID:    "Counter",
+					MType: domain.CounterType,
+					Delta: domain.DeltaPtr(1),
+				},
+			},
+		},
+		{
+			"add gague",
+			[]domain.Metrics{
+				{
+					ID:    "Gague",
+					MType: domain.GaugeType,
+					Value: domain.ValuePtr(1.),
+				},
+			},
+		},
+		{
+			"mix",
+			[]domain.Metrics{
+				{
+					ID:    "Gague",
+					MType: domain.GaugeType,
+					Value: domain.ValuePtr(1.),
+				},
+				{
+					ID:    "Counter",
+					MType: domain.CounterType,
+					Delta: domain.DeltaPtr(1),
+				},
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			err := mc.Update(context.TODO(), test.input)
+			assert.NoError(t, err)
+		})
+	}
+
 }

@@ -179,3 +179,137 @@ func TestMemoryStorageCounterOperations(t *testing.T) {
 	require.Equal(t, int64(4), *ms.Delta)
 	require.Nil(t, ms.Value)
 }
+
+func TestAddMetrics(t *testing.T) {
+
+	t.Run("gague", func(t *testing.T) {
+		storage := memory.NewStorage()
+
+		GagueID := "NumGC"
+
+		mConst := &domain.Metrics{
+			ID:    GagueID,
+			MType: domain.GaugeType,
+			Value: domain.ValuePtr(2),
+		}
+
+		ctx := context.Background()
+
+		ms, err := storage.Get(ctx, GagueID, domain.GaugeType)
+		require.NoError(t, err)
+		require.Nil(t, ms)
+
+		err = storage.AddMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
+		require.NoError(t, err)
+		require.Equal(t, *mConst.Value, *ms.Value)
+
+		err = storage.AddMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
+		require.NoError(t, err)
+		require.Equal(t, 2**mConst.Value, *ms.Value)
+	})
+
+	t.Run("counter", func(t *testing.T) {
+		storage := memory.NewStorage()
+
+		CounterID := "NumGC"
+
+		mConst := &domain.Metrics{
+			ID:    CounterID,
+			MType: domain.CounterType,
+			Delta: domain.DeltaPtr(2),
+		}
+
+		ctx := context.Background()
+
+		ms, err := storage.Get(ctx, CounterID, domain.CounterType)
+		require.NoError(t, err)
+		require.Nil(t, ms)
+
+		err = storage.AddMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, CounterID, domain.CounterType)
+		require.NoError(t, err)
+		require.Equal(t, *mConst.Delta, *ms.Delta)
+
+		err = storage.AddMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, CounterID, domain.CounterType)
+		require.NoError(t, err)
+		require.Equal(t, 2**mConst.Delta, *ms.Delta)
+	})
+}
+
+func TestSetMetrics(t *testing.T) {
+
+	t.Run("gague", func(t *testing.T) {
+		storage := memory.NewStorage()
+
+		GagueID := "NumGC"
+
+		mConst := &domain.Metrics{
+			ID:    GagueID,
+			MType: domain.GaugeType,
+			Value: domain.ValuePtr(2),
+		}
+
+		ctx := context.Background()
+
+		ms, err := storage.Get(ctx, GagueID, domain.GaugeType)
+		require.NoError(t, err)
+		require.Nil(t, ms)
+
+		err = storage.SetMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
+		require.NoError(t, err)
+		require.Equal(t, *mConst.Value, *ms.Value)
+
+		err = storage.SetMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, GagueID, domain.GaugeType)
+		require.NoError(t, err)
+		require.Equal(t, *mConst.Value, *ms.Value)
+	})
+
+	t.Run("counter", func(t *testing.T) {
+		storage := memory.NewStorage()
+
+		CounterID := "NumGC"
+
+		mConst := &domain.Metrics{
+			ID:    CounterID,
+			MType: domain.CounterType,
+			Delta: domain.DeltaPtr(2),
+		}
+
+		ctx := context.Background()
+
+		ms, err := storage.Get(ctx, CounterID, domain.CounterType)
+		require.NoError(t, err)
+		require.Nil(t, ms)
+
+		err = storage.SetMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, CounterID, domain.CounterType)
+		require.NoError(t, err)
+		require.Equal(t, *mConst.Delta, *ms.Delta)
+
+		err = storage.SetMetrics(ctx, []domain.Metrics{*mConst})
+		require.NoError(t, err)
+
+		ms, err = storage.Get(ctx, CounterID, domain.CounterType)
+		require.NoError(t, err)
+		require.Equal(t, *mConst.Delta, *ms.Delta)
+	})
+}

@@ -16,4 +16,5 @@ type MetricApp interface {
 	GetGauge(ctx context.Context, name string) (*domain.Metrics, error)
 	AddCounter(ctx context.Context, m *domain.Metrics) error
 	SetGauge(ctx context.Context, m *domain.Metrics) error
+	Update(ctx context.Context, mtr []domain.Metrics) error
 }
