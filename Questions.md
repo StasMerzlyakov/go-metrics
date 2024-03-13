@@ -6,13 +6,11 @@
 
 - w.WriteHeader(http.StatusOK) - где писать, надо ли вообще писать? (судя по всему не надо; мало ли какие мидлы дальше будут работать)
 
-- chi.Use хочет handler - можно ли подставить в chi http.HandlerFunc  (с handlerFunc работать удобней, чем с обычным http.Handler; см compress_utils_test.go); есть ли преобразование HandlerFunc в Handler (ссылка на пример, если есть)
-
 - Куда спрятать доп.функции для тестирования (compress_utils_test.go)
 
 - Загрузка конфигурации (flag, env) (см internal/config/server.go) - можно ли покрыть тестами (ссылка на пример, если есть; надо ли вообще? :)
 
-- Вопрос по api - "net/http".Server.Shutdown(ctx context.Context) для чего передается контекст? для возможности cancel контекста? (например по по таймауту)
+- Вопрос по api - "net/http".Server.Shutdown(ctx context.Context) для чего передается контекст? для возможности cancel shutdown-контекста ? (например по по таймауту; правильно ли что для shutdown использую serverContext)
 
 - BoolVar - работает хитро - значение по-умолчанию "true" ????!!! (сделал через flag.Var - не усложняю ли)
 
