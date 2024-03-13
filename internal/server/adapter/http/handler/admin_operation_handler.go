@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"runtime"
@@ -10,6 +11,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
+
+//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . AdminApp
+type AdminApp interface {
+	Ping(ctx context.Context) error
+}
 
 func AddAdminOperations(r *chi.Mux, adminApp AdminApp, log *zap.SugaredLogger) {
 

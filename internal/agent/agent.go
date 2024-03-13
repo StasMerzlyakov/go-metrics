@@ -82,7 +82,7 @@ func (a *agent) reportMetrics(ctx context.Context) {
 			metrics := a.metricStorage.GetMetrics()
 			err := a.resultSender.SendMetrics(metrics)
 			if err != nil {
-				log.Printf("ReportMetrics ERROR: %v\n", err)
+				logrus.Infof("ReportMetrics ERROR: %v\n", err)
 			} else {
 				logrus.Info("ReportMetrics SUCCESS")
 			}
