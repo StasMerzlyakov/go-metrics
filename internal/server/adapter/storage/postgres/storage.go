@@ -260,7 +260,7 @@ func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) erro
 				return err
 			}
 		case domain.GaugeType:
-			_, err := gaugeStmt.ExecContext(ctx, m.ID, *m.Delta)
+			_, err := gaugeStmt.ExecContext(ctx, m.ID, *m.Value)
 			if err != nil {
 				return err
 			}
@@ -299,7 +299,7 @@ func (st *storage) AddMetrics(ctx context.Context, metric []domain.Metrics) erro
 				return err
 			}
 		case domain.GaugeType:
-			_, err := gaugeStmt.ExecContext(ctx, m.ID, *m.Delta)
+			_, err := gaugeStmt.ExecContext(ctx, m.ID, *m.Value)
 			if err != nil {
 				return err
 			}

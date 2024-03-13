@@ -23,25 +23,30 @@ func NewHTTPResultSender(serverAdd string) *httpResultSender {
 		client: resty.New().
 			// Иногда возникает ошибка EOF или http: server closed idle connection; добавим Retry
 			SetRetryCount(3),
+		batchSize: 5,
 	}
 }
 
 type httpResultSender struct {
 	serverAdd string
 	client    *resty.Client
+	batchSize int
 }
 
 func (h *httpResultSender) SendMetrics(metrics []Metrics) error {
-	for _, metric := range metrics {
-		err := h.store(metric)
-		if err != nil {
+	for i := 0; i*h.batchSize < len(metrics); i++ {
+		end := (i + 1) * h.batchSize
+		if (i+1)*h.batchSize > len(metrics) {
+			end = len(metrics)
+		}
+		if err := h.store(metrics[i*h.batchSize : end]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *httpResultSender) store(metric Metrics) error {
+func (h *httpResultSender) store(metrics []Metrics) error {
 	var buf bytes.Buffer
 
 	w, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
@@ -49,7 +54,7 @@ func (h *httpResultSender) store(metric Metrics) error {
 		logrus.Errorf("gzip.NewWriterLevel error: %v", err)
 		return err
 	}
-	if err := json.NewEncoder(w).Encode(metric); err != nil {
+	if err := json.NewEncoder(w).Encode(metrics); err != nil {
 		logrus.Errorf("json encode error: %v", err)
 		return err
 	}
@@ -62,7 +67,7 @@ func (h *httpResultSender) store(metric Metrics) error {
 	resp, err := h.client.R().
 		SetHeader("Content-Type", "application/json; charset=UTF-8").
 		SetHeader("Content-Encoding", "gzip").
-		SetBody(buf.Bytes()).Post(h.serverAdd + "/update/")
+		SetBody(buf.Bytes()).Post(h.serverAdd + "/updates/")
 	if err != nil {
 		logrus.Errorf("server communication error: %v", err)
 	}
@@ -72,10 +77,6 @@ func (h *httpResultSender) store(metric Metrics) error {
 		logrus.Errorf(errStr)
 		return errors.New(errStr)
 	}
-
-	/*_, err := h.client.R().
-	SetHeader("Content-Type", "application/json; charset=UTF-8").
-	SetBody(metric).Post(h.serverAdd + "/update/") */
 
 	return err
 }
