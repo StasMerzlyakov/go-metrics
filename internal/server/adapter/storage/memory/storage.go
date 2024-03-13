@@ -141,7 +141,7 @@ func (st *storage) Get(ctx context.Context, id string, mType domain.MetricType) 
 	}
 }
 
-func (st *storage) Start(ctx context.Context) error {
+func (st *storage) Bootstrap(ctx context.Context) error {
 	return nil
 }
 
@@ -149,6 +149,6 @@ func (st *storage) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (st *storage) Stop(ctx context.Context) error {
+func (st *storage) Close(ctx context.Context) error {
 	return nil
 }

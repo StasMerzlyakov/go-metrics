@@ -175,9 +175,36 @@ func (st *storage) Get(ctx context.Context, id string, mType domain.MetricType) 
 	}
 }
 
-func (st *storage) Start(ctx context.Context) error {
-	err := st.initIfNessessary(ctx)
-	return err
+func (st *storage) Bootstrap(ctx context.Context) error {
+
+	if db, err := sql.Open("pgx", st.databaseURL); err != nil {
+		st.logger.Infow("Bootstrap", "status", "error", "msg", err.Error())
+		return err
+	} else {
+		st.db = db
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+
+		tx.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS counter(
+			name text not null,
+			value bigint,
+			PRIMARY KEY(name)
+		);`)
+
+		tx.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS gauge(
+			name text not null,
+			value double precision,
+			PRIMARY KEY(name)
+		);`)
+
+		return tx.Commit()
+	}
+
 }
 
 func (st *storage) Ping(ctx context.Context) error {
@@ -194,7 +221,7 @@ func (st *storage) Ping(ctx context.Context) error {
 	}
 }
 
-func (st *storage) Stop(ctx context.Context) error {
+func (st *storage) Close(ctx context.Context) error {
 	if err := st.db.Close(); err != nil {
 		st.logger.Infow("Stop", "status", "error", "msg", err.Error())
 		return err

@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
-	"github.com/StasMerzlyakov/go-metrics/internal/server"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/formatter"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
@@ -17,7 +17,6 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
 
 	"go.uber.org/zap"
@@ -40,18 +39,22 @@ func createMiddleWareList(log *zap.SugaredLogger) []func(http.Handler) http.Hand
 type FullStorage interface {
 	app.Storage
 	app.Pinger
-	server.StartStopListener
+	Bootstrap(ctx context.Context) error
+	Close(ctx context.Context) error
 }
 
 func main() {
 
-	// Конфигурация
+	// -------- Контекст сервера ---------
+	srvCtx, cancelFn := context.WithCancel(context.Background())
+
+	// -------- Конфигурация ----------
 	srvConf, err := config.LoadServerConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	// Создаем логгер
+	// -------- Логгер ---------------
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		// вызываем панику, если ошибка
@@ -61,7 +64,7 @@ func main() {
 
 	sugarLog := logger.Sugar()
 
-	// Сборка сервера
+	// -------- Хранилище -------------
 	var storage FullStorage
 
 	if srvConf.DatabaseDSN != "" {
@@ -70,52 +73,84 @@ func main() {
 		storage = memory.NewStorage()
 	}
 
+	defer storage.Close(srvCtx)
+
+	if err := storage.Bootstrap(srvCtx); err != nil {
+		panic(err)
+	}
+
+	// -------- Бэкап ------------
+	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
+	backUper := app.NewBackup(sugarLog, storage, backupFomratter)
+
+	if srvConf.Restore {
+		// восстановленгие бэкапа
+		if err := backUper.RestoreBackUp(srvCtx); err != nil {
+			panic(err)
+		}
+	}
+
+	// проверяем - нужен ли синхронный бэкап
+	doSyncBackup := srvConf.StoreInterval == 0
+
+	if !doSyncBackup {
+		// запускаем фоновый процесс
+		go func() {
+			storeInterval := time.Duration(srvConf.StoreInterval) * time.Second
+			var ticker = time.NewTicker(storeInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-srvCtx.Done():
+					sugarLog.Infow("Run", "msg", "backup finished")
+					return
+				case <-ticker.C:
+					if err := backUper.DoBackUp(srvCtx); err != nil {
+						sugarLog.Fatalw("DoBackUp", "msg", err.Error())
+					}
+				}
+			}
+		}()
+
+	}
+
+	// ---------- Http сервер -----------
 	httpHandler := chi.NewMux()
 
 	// мидлы
 	mwList := createMiddleWareList(sugarLog)
 	middleware.Add(httpHandler, mwList...)
 
+	// операции с метриками
 	metricApp := app.NewMetrics(storage)
 	handler.AddMetricOperations(httpHandler, metricApp, sugarLog)
 
+	// административные операции
 	adminApp := app.NewAdminApp(sugarLog, storage)
 	handler.AddAdminOperations(httpHandler, adminApp, sugarLog)
 
-	// бэкап
-	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
-	backup := app.NewBackup(sugarLog, storage, backupFomratter)
-
-	// проверяем - нужен ли синхронный бэкап
-	doSyncBackup := srvConf.StoreInterval == 0
-
-	if doSyncBackup {
-		sugarLog.Warnf("NewMetricsServer", "msg", "backup work in sync mode")
-		// синхронный бэкап реализован через мехинизм листенеров изменений
-		//  (изменение данных может происходить и не только через http)
-		metricApp.AddListener(func(ctx context.Context, m *domain.Metrics) error {
-			return backup.DoBackUp(ctx)
-		})
+	// запускаем http-сервер
+	srv := &http.Server{
+		Addr:        srvConf.URL,
+		Handler:     httpHandler,
+		ReadTimeout: 0,
+		IdleTimeout: 0,
 	}
 
-	resources := []server.StartStopListener{storage}
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			sugarLog.Fatalw("ListenAndServe", "msg", err.Error())
+			panic(err)
+		}
+	}()
 
-	var server Server = server.NewMetricsServer(srvConf,
-		sugarLog,
-		httpHandler,
-		backup,
-		resources...)
-
-	// Запуск сервера
-	ctx, cancelFn := context.WithCancel(context.Background())
+	// --------------- Обрабатываем остановку сервера --------------
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
 
-	server.Start(ctx)
 	defer func() {
 		cancelFn()
-		shutdownCtx := context.TODO()
-		server.Shutdown(shutdownCtx)
+		srv.Shutdown(srvCtx)
 	}()
 	<-exit
 }
