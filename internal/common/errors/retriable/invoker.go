@@ -12,7 +12,7 @@ type Invoker interface {
 }
 
 type Logger interface {
-	Infow(msg string, keysAndValues ...interface{})
+	Infow(msg string, keysAndValues ...any)
 }
 
 type InvokableFunc func(ctx context.Context, args ...any) error
@@ -22,49 +22,73 @@ func (f InvokableFunc) Invoke(ctx context.Context, args ...any) error {
 }
 
 type RetriableInvokerConf struct {
-	RetriableError        error
-	RepeateDelay          time.Duration
-	RepeateIncrementDelay time.Duration
-	MaxRepeateCount       int
+	RetriableError  error
+	FirstRetryDelay time.Duration
+	DelayIncrement  time.Duration
+	RetryCount      int
+}
+
+func DefaultConf(retriableError error) *RetriableInvokerConf {
+	return &RetriableInvokerConf{
+		RetriableError:  retriableError,
+		FirstRetryDelay: time.Duration(time.Second),
+		DelayIncrement:  time.Duration(2 * time.Second),
+		RetryCount:      4,
+	}
+}
+
+type retriableInvoker struct {
+	RetriableInvokerConf
+	logger Logger
+	fn     InvokableFunc
+}
+
+func (r *retriableInvoker) Invoke(ctx context.Context, args ...any) error {
+	var err error
+	iter := 1
+
+	for {
+		r.logger.Infow("Invoke", "iteration", iter, "status", "start")
+		err = r.fn(ctx, args...)
+		if err == nil {
+			r.logger.Infow("Invoke", "iteration", iter, "status", "ok")
+			return nil
+		}
+
+		if !errors.Is(err, r.RetriableError) || iter == r.RetryCount {
+			r.logger.Infow("Invoke", "iteration", iter, "status", "err", "msg", err.Error())
+			return err
+		}
+		nextInvokation := r.FirstRetryDelay + time.Duration(iter-1)*r.DelayIncrement
+		select {
+		case <-ctx.Done():
+			r.logger.Infow("Invoke", "status", "err", "msg", "context cancelled")
+			return ctx.Err()
+		case <-time.After(nextInvokation):
+			iter++
+			continue
+		}
+	}
 }
 
 func CreateRetriableFn(retriableError error, logger Logger, fn InvokableFunc) InvokableFunc {
-	return CreateRetriableFnConf(&RetriableInvokerConf{
-		RetriableError:        retriableError,
-		RepeateDelay:          time.Duration(time.Second),
-		RepeateIncrementDelay: time.Duration(2 * time.Second),
-	}, logger, fn)
+	return CreateRetriableFnConf(DefaultConf(retriableError), logger, fn)
 }
 
 func CreateRetriableFnConf(r *RetriableInvokerConf, logger Logger, fn InvokableFunc) InvokableFunc {
-	return func(ctx context.Context, args ...any) error {
+	invoker := CreateRetriableInvokerConf(r, logger, fn)
+	return invoker.Invoke
+}
 
-		i := 0
-		for {
-			err := fn(ctx, args...)
+func CreateRetriableInvoker(retriableError error, logger Logger, fn InvokableFunc) Invoker {
+	return CreateRetriableInvokerConf(DefaultConf(retriableError), logger, fn)
+}
 
-			if err == nil {
-				logger.Infow("RetriableFn", "status", "ok")
-				return nil
-			}
-
-			if errors.Is(err, r.RetriableError) {
-				if i == r.MaxRepeateCount {
-					logger.Infow("RetriableFn", "status", "err", "msg", err.Error())
-					return err
-				}
-
-				// Обрабатываемая ошибка
-				logger.Infow("RetriableFn", "status", "retry", "msg", err.Error())
-
-				var waitTime time.Duration = r.RepeateDelay + time.Duration(i)*r.RepeateIncrementDelay
-				time.Sleep(waitTime)
-				i++
-				continue
-			} else {
-				logger.Infow("RetriableFn", "status", "err", "msg", err.Error())
-				return err
-			}
-		}
+func CreateRetriableInvokerConf(r *RetriableInvokerConf, logger Logger, fn InvokableFunc) Invoker {
+	invoker := &retriableInvoker{
+		RetriableInvokerConf: *r,
+		logger:               logger,
+		fn:                   fn,
 	}
+	return invoker
 }
