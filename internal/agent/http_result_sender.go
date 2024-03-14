@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,9 +21,7 @@ func NewHTTPResultSender(serverAdd string) *httpResultSender {
 	serverAdd = strings.TrimSuffix(serverAdd, "/")
 	return &httpResultSender{
 		serverAdd: serverAdd,
-		client: resty.New().
-			// Иногда возникает ошибка EOF или http: server closed idle connection; добавим Retry
-			SetRetryCount(3),
+		client:    resty.New(),
 		batchSize: 5,
 	}
 }
@@ -33,20 +32,21 @@ type httpResultSender struct {
 	batchSize int
 }
 
-func (h *httpResultSender) SendMetrics(metrics []Metrics) error {
+func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
 	for i := 0; i*h.batchSize < len(metrics); i++ {
 		end := (i + 1) * h.batchSize
 		if (i+1)*h.batchSize > len(metrics) {
 			end = len(metrics)
 		}
-		if err := h.store(metrics[i*h.batchSize : end]); err != nil {
+
+		if err := h.store(ctx, metrics[i*h.batchSize:end]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *httpResultSender) store(metrics []Metrics) error {
+func (h *httpResultSender) store(ctx context.Context, metrics []Metrics) error {
 	var buf bytes.Buffer
 
 	w, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
@@ -67,9 +67,11 @@ func (h *httpResultSender) store(metrics []Metrics) error {
 	resp, err := h.client.R().
 		SetHeader("Content-Type", "application/json; charset=UTF-8").
 		SetHeader("Content-Encoding", "gzip").
-		SetBody(buf.Bytes()).Post(h.serverAdd + "/updates/")
+		SetBody(buf.Bytes()).
+		SetContext(ctx).Post(h.serverAdd + "/updates/")
 	if err != nil {
 		logrus.Errorf("server communication error: %v", err)
+		return err
 	}
 
 	if resp.StatusCode() != http.StatusOK {

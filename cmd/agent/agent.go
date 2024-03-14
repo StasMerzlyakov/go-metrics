@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 )
 
@@ -24,9 +25,11 @@ func main() {
 
 	metricStorage := agent.NewMemStatsStorage()
 	resultSender := agent.NewHTTPResultSender(agentCfg.ServerAddr)
+	retryCfg := retriable.DefaultConf(syscall.ECONNREFUSED)
+	retryableResultSender := agent.NewHTTPRetryableResultSender(*retryCfg, resultSender)
 
 	var agnt Agent = agent.Create(agentCfg,
-		resultSender,
+		retryableResultSender,
 		metricStorage,
 	)
 

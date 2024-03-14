@@ -10,10 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ResultSender interface {
-	SendMetrics(metrics []Metrics) error
-}
-
 type MetricStorage interface {
 	Refresh() error
 	GetMetrics() []Metrics
@@ -80,7 +76,7 @@ func (a *agent) reportMetrics(ctx context.Context) {
 			return
 		case <-time.After(reportInterval):
 			metrics := a.metricStorage.GetMetrics()
-			err := a.resultSender.SendMetrics(metrics)
+			err := a.resultSender.SendMetrics(ctx, metrics)
 			if err != nil {
 				logrus.Infof("ReportMetrics ERROR: %v\n", err)
 			} else {
