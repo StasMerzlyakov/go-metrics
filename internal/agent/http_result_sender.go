@@ -33,6 +33,7 @@ type httpResultSender struct {
 }
 
 func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
+	logrus.Infof("SendMetrics start")
 	for i := 0; i*h.batchSize < len(metrics); i++ {
 		end := (i + 1) * h.batchSize
 		if (i+1)*h.batchSize > len(metrics) {

@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/formatter"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
@@ -16,8 +18,12 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/wrapper"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"go.uber.org/zap"
 )
@@ -69,6 +75,32 @@ func main() {
 
 	if srvConf.DatabaseDSN != "" {
 		storage = postgres.NewStorage(sugarLog, srvConf.DatabaseDSN)
+
+		// при работе с Postgres добавляем retriable-обертку
+
+		// функция, обрабатывающая ошибки; в нужных случаях выкидывает нужную ошибку(domain.ErrDBConnection)
+		// на которую реагирует retriableWrapper
+		pgErrPreProcFn := func(err error) error {
+			if err == nil {
+				return nil
+			}
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				if pgerrcode.IsConnectionException(pgErr.Code) {
+					return domain.ErrDBConnection
+				}
+			}
+
+			var conErr *pgconn.ConnectError
+			if errors.As(err, &conErr) {
+				return domain.ErrDBConnection
+			}
+			return err
+		}
+
+		retriableConf := retriable.DefaultConfFn(domain.ErrDBConnection, pgErrPreProcFn)
+		storage = wrapper.NewRetriableWrapper(retriableConf, sugarLog, storage)
+
 	} else {
 		storage = memory.NewStorage()
 	}

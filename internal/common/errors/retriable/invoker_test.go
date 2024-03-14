@@ -18,14 +18,11 @@ func TestInvoker1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	ctx := context.Background()
-	mInv := mocks.NewMockInvoker(ctrl)
-
 	mLog := mocks.NewMockLogger(ctrl)
 	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
 
 	conf := &retriable.RetriableInvokerConf{
-		RetriableError:  io.EOF,
+		RetriableErr:    io.EOF,
 		FirstRetryDelay: time.Duration(time.Second),
 		DelayIncrement:  time.Duration(2 * time.Second),
 		RetryCount:      4,
@@ -35,42 +32,41 @@ func TestInvoker1(t *testing.T) {
 		name                    string
 		retriableError          error
 		invocationFnError       error
-		args                    []any
 		expectedInvokationCount int
 	}{
 		{
 			"retriable",
 			io.EOF,
 			io.EOF,
-			[]any{1, 2, 3, 4},
 			4,
 		},
 		{
 			"is_not_retriable",
 			io.ErrClosedPipe,
 			io.EOF,
-			[]any{1, "2"},
 			1,
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			mInv.EXPECT().Invoke(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(ctx context.Context, args ...any) error {
-					assert.Equal(t, len(test.args), len(args))
-					for i, m := range args {
-						assert.Equal(t, test.args[i], m)
-					}
-					return fmt.Errorf("wrap error %w", test.invocationFnError)
-				}).Times(test.expectedInvokationCount)
+			ctx := context.Background()
 
-			conf.RetriableError = test.retriableError
-			invokableFn := retriable.CreateRetriableFnConf(conf, mLog, mInv.Invoke)
+			invokeCount := 0
+			fn := func(ctx context.Context) error {
+				defer func() {
+					invokeCount++
+				}()
+				return fmt.Errorf("wrap error %w", test.invocationFnError)
+			}
+
+			conf.RetriableErr = test.retriableError
+			invoker := retriable.CreateRetriableInvokerConf(conf, mLog)
 
 			maxTestDuration := maxInvokationDuration(conf)
 			startTime := time.Now()
-			err := invokableFn(ctx, test.args...)
+			err := invoker.Invoke(fn, ctx)
+			assert.Equal(t, test.expectedInvokationCount, invokeCount)
 			assert.True(t, errors.Is(err, test.invocationFnError))
 			assert.True(t, time.Since(startTime) < maxTestDuration+time.Second) // добавим секунду на накладные расходы
 		})
@@ -91,13 +87,11 @@ func TestInvokerCancellation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mInv := mocks.NewMockInvoker(ctrl)
-
 	mLog := mocks.NewMockLogger(ctrl)
 	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
 
 	conf := &retriable.RetriableInvokerConf{
-		RetriableError:  io.EOF,
+		RetriableErr:    io.EOF,
 		FirstRetryDelay: time.Duration(time.Second),
 		DelayIncrement:  time.Duration(2 * time.Second),
 		RetryCount:      4,
@@ -107,38 +101,30 @@ func TestInvokerCancellation(t *testing.T) {
 		name              string
 		retriableError    error
 		invocationFnError error
-		args              []any
 	}{
 		{
 			"retriable",
 			io.EOF,
 			io.EOF,
-			[]any{1, 2, 3, 4},
 		},
 		{
 			"is_not_retriable",
 			io.ErrClosedPipe,
 			io.EOF,
-			[]any{1, "2"},
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			mInv.EXPECT().Invoke(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(ctx context.Context, args ...any) error {
-					assert.Equal(t, len(test.args), len(args))
-					for i, m := range args {
-						assert.Equal(t, test.args[i], m)
-					}
-					return fmt.Errorf("wrap error %w", test.invocationFnError)
-				}).AnyTimes()
+			fn := func(ctx context.Context) error {
+				return fmt.Errorf("wrap error %w", test.invocationFnError)
+			}
 
-			conf.RetriableError = test.retriableError
-			invokableFn := retriable.CreateRetriableFnConf(conf, mLog, mInv.Invoke)
+			conf.RetriableErr = test.retriableError
+			invoker := retriable.CreateRetriableInvokerConf(conf, mLog)
 			ctx, cancelFn := context.WithTimeout(context.Background(), time.Millisecond*500)
 			startTime := time.Now()
-			err := invokableFn(ctx, test.args...)
+			err := invoker.Invoke(fn, ctx)
 			cancelFn()
 			assert.Error(t, err)
 			assert.True(t, time.Since(startTime) < time.Second) // добавим секунду на накладные расходы

@@ -6,56 +6,64 @@ import (
 	"time"
 )
 
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . Invoker,Logger
-type Invoker interface {
-	Invoke(ctx context.Context, args ...any) error
-}
-
+//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . Logger
 type Logger interface {
 	Infow(msg string, keysAndValues ...any)
 }
 
-type InvokableFunc func(ctx context.Context, args ...any) error
+type InvokableFn func(ctx context.Context) error
 
-func (f InvokableFunc) Invoke(ctx context.Context, args ...any) error {
-	return f(ctx, args)
-}
+type ErrPreProcessFn func(err error) error
 
 type RetriableInvokerConf struct {
-	RetriableError  error
+	RetriableErr    error
 	FirstRetryDelay time.Duration
 	DelayIncrement  time.Duration
 	RetryCount      int
+	PreProccFn      ErrPreProcessFn
 }
 
-func DefaultConf(retriableError error) *RetriableInvokerConf {
+func DefaultErrPreProcFn(err error) error {
+	return err
+}
+
+func DefaultConf(retriableErr error) *RetriableInvokerConf {
+	return DefaultConfFn(retriableErr, DefaultErrPreProcFn)
+}
+
+func DefaultConfFn(retriableErr error, preProccFn ErrPreProcessFn) *RetriableInvokerConf {
+	if preProccFn == nil {
+		preProccFn = DefaultErrPreProcFn
+	}
 	return &RetriableInvokerConf{
-		RetriableError:  retriableError,
+		RetriableErr:    retriableErr,
 		FirstRetryDelay: time.Duration(time.Second),
 		DelayIncrement:  time.Duration(2 * time.Second),
 		RetryCount:      4,
+		PreProccFn:      preProccFn,
 	}
 }
 
 type retriableInvoker struct {
 	RetriableInvokerConf
 	logger Logger
-	fn     InvokableFunc
 }
 
-func (r *retriableInvoker) Invoke(ctx context.Context, args ...any) error {
+func (r *retriableInvoker) Invoke(fn InvokableFn, ctx context.Context) error {
 	var err error
 	iter := 1
 
 	for {
 		r.logger.Infow("Invoke", "iteration", iter, "status", "start")
-		err = r.fn(ctx, args...)
+		err = fn(ctx)
 		if err == nil {
 			r.logger.Infow("Invoke", "iteration", iter, "status", "ok")
 			return nil
 		}
 
-		if !errors.Is(err, r.RetriableError) || iter == r.RetryCount {
+		err = r.PreProccFn(err)
+
+		if !errors.Is(err, r.RetriableErr) || iter == r.RetryCount {
 			r.logger.Infow("Invoke", "iteration", iter, "status", "err", "msg", err.Error())
 			return err
 		}
@@ -71,24 +79,17 @@ func (r *retriableInvoker) Invoke(ctx context.Context, args ...any) error {
 	}
 }
 
-func CreateRetriableFn(retriableError error, logger Logger, fn InvokableFunc) InvokableFunc {
-	return CreateRetriableFnConf(DefaultConf(retriableError), logger, fn)
+func CreateRetriableInvoker(retriableError error, logger Logger) *retriableInvoker {
+	return CreateRetriableInvokerConf(DefaultConf(retriableError), logger)
 }
 
-func CreateRetriableFnConf(r *RetriableInvokerConf, logger Logger, fn InvokableFunc) InvokableFunc {
-	invoker := CreateRetriableInvokerConf(r, logger, fn)
-	return invoker.Invoke
-}
-
-func CreateRetriableInvoker(retriableError error, logger Logger, fn InvokableFunc) Invoker {
-	return CreateRetriableInvokerConf(DefaultConf(retriableError), logger, fn)
-}
-
-func CreateRetriableInvokerConf(r *RetriableInvokerConf, logger Logger, fn InvokableFunc) Invoker {
+func CreateRetriableInvokerConf(r *RetriableInvokerConf, logger Logger) *retriableInvoker {
+	if r.PreProccFn == nil {
+		r.PreProccFn = DefaultErrPreProcFn
+	}
 	invoker := &retriableInvoker{
 		RetriableInvokerConf: *r,
 		logger:               logger,
-		fn:                   fn,
 	}
 	return invoker
 }

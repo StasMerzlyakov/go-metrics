@@ -39,10 +39,7 @@ var createGaugeTableSQL = `CREATE TABLE IF NOT EXISTS gauge(
 );`
 
 func (st *storage) SetAllMetrics(ctx context.Context, in []domain.Metrics) error {
-
-	if err := st.initIfNessessary(ctx); err != nil {
-		return err
-	}
+	st.logger.Infow("SetAllMetrics", "status", "start")
 	_, err := st.db.ExecContext(ctx, "TRUNCATE counter,gauge")
 
 	if err != nil {
@@ -83,11 +80,7 @@ func (st *storage) SetAllMetrics(ctx context.Context, in []domain.Metrics) error
 }
 
 func (st *storage) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) {
-
-	if err := st.initIfNessessary(ctx); err != nil {
-		return nil, err
-	}
-
+	st.logger.Infow("GetAllMetrics", "status", "start")
 	var metricsList []domain.Metrics
 	gaugeList, err := st.getAllGauge(ctx)
 	if err != nil {
@@ -121,11 +114,7 @@ func (st *storage) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) 
 }
 
 func (st *storage) Set(ctx context.Context, m *domain.Metrics) error {
-
-	if err := st.initIfNessessary(ctx); err != nil {
-		return err
-	}
-
+	st.logger.Infow("Set", "status", "start")
 	switch m.MType {
 	case domain.CounterType:
 		delta := *m.Delta
@@ -141,11 +130,7 @@ func (st *storage) Set(ctx context.Context, m *domain.Metrics) error {
 }
 
 func (st *storage) Add(ctx context.Context, m *domain.Metrics) error {
-
-	if err := st.initIfNessessary(ctx); err != nil {
-		return err
-	}
-
+	st.logger.Infow("Add", "status", "start")
 	switch m.MType {
 	case domain.CounterType:
 		delta := *m.Delta
@@ -162,9 +147,6 @@ func (st *storage) Add(ctx context.Context, m *domain.Metrics) error {
 }
 
 func (st *storage) Get(ctx context.Context, id string, mType domain.MetricType) (*domain.Metrics, error) {
-	if err := st.initIfNessessary(ctx); err != nil {
-		return nil, err
-	}
 	switch mType {
 	case domain.CounterType:
 		return st.getCounter(ctx, id)
@@ -176,7 +158,7 @@ func (st *storage) Get(ctx context.Context, id string, mType domain.MetricType) 
 }
 
 func (st *storage) Bootstrap(ctx context.Context) error {
-
+	st.logger.Infow("Bootstrap", "status", "start")
 	if db, err := sql.Open("pgx", st.databaseURL); err != nil {
 		st.logger.Infow("Bootstrap", "status", "error", "msg", err.Error())
 		return err
@@ -208,10 +190,7 @@ func (st *storage) Bootstrap(ctx context.Context) error {
 }
 
 func (st *storage) Ping(ctx context.Context) error {
-	if err := st.initIfNessessary(ctx); err != nil {
-		return err
-	}
-
+	st.logger.Infow("Ping", "status", "start")
 	if err := st.db.PingContext(ctx); err != nil {
 		st.logger.Infow("Ping", "status", "error", "msg", err.Error())
 		return err
@@ -222,6 +201,7 @@ func (st *storage) Ping(ctx context.Context) error {
 }
 
 func (st *storage) Close(ctx context.Context) error {
+	st.logger.Infow("Close", "status", "start")
 	if err := st.db.Close(); err != nil {
 		st.logger.Infow("Stop", "status", "error", "msg", err.Error())
 		return err
@@ -232,6 +212,7 @@ func (st *storage) Close(ctx context.Context) error {
 }
 
 func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) error {
+	st.logger.Infow("SetMetrics", "status", "start")
 	tx, err := st.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -271,6 +252,7 @@ func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) erro
 }
 
 func (st *storage) AddMetrics(ctx context.Context, metric []domain.Metrics) error {
+	st.logger.Infow("AddMetrics", "status", "start")
 	tx, err := st.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -470,32 +452,6 @@ func (st *storage) getGauge(ctx context.Context, id string) (*domain.Metrics, er
 	}
 
 	return nil, nil
-}
-
-func (st *storage) initIfNessessary(ctx context.Context) error {
-	st.sm.Lock()
-	defer st.sm.Unlock()
-	if st.db == nil {
-		if db, err := sql.Open("pgx", st.databaseURL); err != nil {
-			st.logger.Infow("InitIfNessessary", "status", "error", "msg", err.Error())
-			return err
-		} else {
-			st.db = db
-
-			if _, err := st.db.ExecContext(ctx, createCounterTableSQL); err != nil {
-				st.logger.Infow("InitIfNessessary", "status", "error", "msg", err.Error())
-				return err
-			}
-
-			if _, err := st.db.ExecContext(ctx, createGaugeTableSQL); err != nil {
-				st.logger.Infow("InitIfNessessary", "status", "error", "msg", err.Error())
-				return err
-			}
-			st.logger.Infow("InitIfNessessary", "status", "ok", "msg", "tables created")
-			return nil
-		}
-	}
-	return nil
 }
 
 type gauge struct {
