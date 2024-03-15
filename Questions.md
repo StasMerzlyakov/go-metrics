@@ -8,8 +8,6 @@
 
 - w.WriteHeader(http.StatusOK) - где писать, надо ли вообще писать? (судя по всему не надо; мало ли какие мидлы дальше будут работать)
 
-- Куда спрятать доп.функции для тестирования (compress_utils_test.go)
-
 - Загрузка конфигурации (flag, env) (см internal/config/server.go) - можно ли покрыть тестами (ссылка на пример, если есть; надо ли вообще? :)
 
 - Вопрос по api - "net/http".Server.Shutdown(ctx context.Context) для чего передается контекст? для возможности cancel shutdown-контекста ? (например по по таймауту; правильно ли что для shutdown использую serverContext)
@@ -17,4 +15,4 @@
 - BoolVar - работает хитро - значение по-умолчанию "true" ????!!! (сделал через flag.Var - не усложняю ли)
 
 
-- DOCKER - будет ли в кусре использовани для тестов, есть ли пример со стартом/остановкой; связка с githum metricstest (можно ли завязаться на переменные окружение  POSTGRES_PASSWORD: postgres, POSTGRES_DB: praktikum)
+- DOCKER - будет ли в кусре использовани для тестов, есть ли пример со стартом/остановкой; связка с github metricstest (можно ли завязаться на переменные окружение  POSTGRES_PASSWORD: postgres, POSTGRES_DB: praktikum)

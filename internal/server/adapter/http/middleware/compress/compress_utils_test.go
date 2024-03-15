@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// TODO - перевести на gomock
 type checkBodyHandler struct {
 	expected []byte
 }
