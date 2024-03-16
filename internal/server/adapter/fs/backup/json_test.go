@@ -1,4 +1,4 @@
-package formatter_test
+package backup_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/formatter"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -60,7 +60,7 @@ func TestJsonFormatter(t *testing.T) {
 	ctx := context.Background()
 
 	// Файл не указан
-	jF := formatter.NewJSON(logger, "")
+	jF := backup.NewJSON(logger, "")
 	restored, err := jF.Read(ctx)
 	require.True(t, len(restored) == 0)
 	require.ErrorIs(t, os.ErrNotExist, err)
@@ -70,14 +70,14 @@ func TestJsonFormatter(t *testing.T) {
 
 	// Проверяем сохранение и восстановление
 	tmpDir := os.TempDir()
-	file, err := os.CreateTemp(tmpDir, "json_formatter_test*")
+	file, err := os.CreateTemp(tmpDir, "json_backup_test*")
 
 	require.NoError(t, err)
 
 	defer os.Remove(file.Name())
 
 	fileName := file.Name()
-	jF = formatter.NewJSON(logger, fileName)
+	jF = backup.NewJSON(logger, fileName)
 	restored, err = jF.Read(ctx)
 	require.Error(t, err) // EOF
 	require.True(t, len(restored) == 0)

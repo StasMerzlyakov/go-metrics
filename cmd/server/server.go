@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/formatter"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
@@ -112,7 +112,7 @@ func main() {
 	}
 
 	// -------- Бэкап ------------
-	backupFomratter := formatter.NewJSON(sugarLog, srvConf.FileStoragePath)
+	backupFomratter := backup.NewJSON(sugarLog, srvConf.FileStoragePath)
 	backUper := app.NewBackup(sugarLog, storage, backupFomratter)
 
 	if srvConf.Restore {

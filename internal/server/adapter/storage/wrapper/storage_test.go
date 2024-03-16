@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/wrapper"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"

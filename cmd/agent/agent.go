@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
-	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 )
 

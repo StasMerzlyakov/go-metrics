@@ -5,7 +5,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
 	"github.com/sirupsen/logrus"
 )
 

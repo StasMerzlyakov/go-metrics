@@ -9,6 +9,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
 	"github.com/go-resty/resty/v2"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -25,9 +26,12 @@ func TestCompressGZIPBufferResponseMW(t *testing.T) {
 
 	compressMW := compress.NewCompressGZIPBufferResponseMW(suga)
 
-	mux.Handle("/json", middleware.Conveyor(defaultJSONHandle{}, compressMW))
-	mux.Handle("/html", middleware.Conveyor(defaultHTMLHandle{}, compressMW))
-	mux.Handle("/text", middleware.Conveyor(defaultTextHandle{}, compressMW))
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mux.Handle("/json", middleware.Conveyor(createMockJSONHandler(ctrl), compressMW))
+	mux.Handle("/html", middleware.Conveyor(createMockHTMLHandler(ctrl), compressMW))
+	mux.Handle("/text", middleware.Conveyor(createMockTextHandler(ctrl), compressMW))
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()

@@ -3,7 +3,7 @@ package wrapper
 import (
 	"context"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/common/errors/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"go.uber.org/zap"
 )

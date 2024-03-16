@@ -1,6 +1,7 @@
 package compress_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,7 +9,9 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
 	"github.com/go-resty/resty/v2"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -24,10 +27,12 @@ func TestCompressGZIPResponseMW(t *testing.T) {
 	suga := logger.Sugar()
 
 	compressMW := compress.NewCompressGZIPResponseMW(suga)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	mux.Handle("/json", middleware.Conveyor(defaultJSONHandle{}, compressMW))
-	mux.Handle("/html", middleware.Conveyor(defaultHTMLHandle{}, compressMW))
-	mux.Handle("/text", middleware.Conveyor(defaultTextHandle{}, compressMW))
+	mux.Handle("/json", middleware.Conveyor(createMockJSONHandler(ctrl), compressMW))
+	mux.Handle("/html", middleware.Conveyor(createMockHTMLHandler(ctrl), compressMW))
+	mux.Handle("/text", middleware.Conveyor(createMockTextHandler(ctrl), compressMW))
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -116,4 +121,37 @@ func TestCompressGZIPResponseMW(t *testing.T) {
 		})
 	}
 
+}
+
+func createMockHTMLHandler(ctrl *gomock.Controller) http.Handler {
+	mockHandler := mocks.NewMockHandler(ctrl)
+
+	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			io.WriteString(w, "<html><body>"+strings.Repeat("Hello, world<br>", 20)+"</body></html>")
+		}).AnyTimes()
+	return mockHandler
+}
+
+func createMockJSONHandler(ctrl *gomock.Controller) http.Handler {
+	mockHandler := mocks.NewMockHandler(ctrl)
+
+	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			io.WriteString(w, "{ "+strings.Repeat(`"msg":"Hello, world",`, 19)+`"msg":"Hello, world"`+"}")
+		}).AnyTimes()
+	return mockHandler
+}
+
+func createMockTextHandler(ctrl *gomock.Controller) http.Handler {
+	mockHandler := mocks.NewMockHandler(ctrl)
+
+	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/plain")
+			io.WriteString(w, strings.Repeat("Hello, world\n", 20))
+		}).AnyTimes()
+	return mockHandler
 }
