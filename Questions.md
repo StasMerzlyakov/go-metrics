@@ -8,6 +8,8 @@
 
 - storage/wrapper/retriable.go - может есть более изящное решение? (дублирование кода, создание функциональные оберток)
 
+- middleware/testutils/http_handler.go - добавил Handler интерфейс ради генерации mock. Можно ли как-то заставить gomock сгенерировать mock для стандартного интерфейса http.Handler.
+
 - defer req.Body.Close() в http-хэндлере: 
   В документации (https://pkg.go.dev/net/http#Request):
     The Server will close the request body. The ServeHTTP Handler does not need to.
