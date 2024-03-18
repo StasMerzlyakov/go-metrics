@@ -99,7 +99,7 @@ func main() {
 		}
 
 		retriableConf := retriable.DefaultConfFn(domain.ErrDBConnection, pgErrPreProcFn)
-		storage = wrapper.NewRetriableWrapper(retriableConf, sugarLog, storage)
+		storage = wrapper.NewRetriable(retriableConf, sugarLog, storage)
 
 	} else {
 		storage = memory.NewStorage()

@@ -51,7 +51,7 @@ func TestRetruableStorageStoreAndLoad(t *testing.T) {
 
 	mStorage := memory.NewStorage()
 	conf := retriable.DefaultConf(io.EOF)
-	storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+	storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 	out, err := storage.GetAllMetrics(ctx)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestRetruableStorageGaugeOperations(t *testing.T) {
 
 	mStorage := memory.NewStorage()
 	conf := retriable.DefaultConf(io.EOF)
-	storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+	storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 	GagueID := "NumGC"
 
@@ -132,7 +132,7 @@ func TestRetruableStorageCounterOperations(t *testing.T) {
 
 	mStorage := memory.NewStorage()
 	conf := retriable.DefaultConf(io.EOF)
-	storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+	storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 	CounterID := "PollCount"
 
@@ -196,7 +196,7 @@ func TestAddMetrics(t *testing.T) {
 	t.Run("gague", func(t *testing.T) {
 		mStorage := memory.NewStorage()
 		conf := retriable.DefaultConf(io.EOF)
-		storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+		storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 		GagueID := "NumGC"
 
@@ -230,7 +230,7 @@ func TestAddMetrics(t *testing.T) {
 	t.Run("counter", func(t *testing.T) {
 		mStorage := memory.NewStorage()
 		conf := retriable.DefaultConf(io.EOF)
-		storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+		storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 		CounterID := "NumGC"
 
@@ -267,7 +267,7 @@ func TestSetMetrics(t *testing.T) {
 	t.Run("gague", func(t *testing.T) {
 		mStorage := memory.NewStorage()
 		conf := retriable.DefaultConf(io.EOF)
-		storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+		storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 		GagueID := "NumGC"
 
@@ -301,7 +301,7 @@ func TestSetMetrics(t *testing.T) {
 	t.Run("counter", func(t *testing.T) {
 		mStorage := memory.NewStorage()
 		conf := retriable.DefaultConf(io.EOF)
-		storage := wrapper.NewRetriableWrapper(conf, logger(), mStorage)
+		storage := wrapper.NewRetriable(conf, logger(), mStorage)
 
 		CounterID := "NumGC"
 

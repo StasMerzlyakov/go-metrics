@@ -25,7 +25,7 @@ type Storage interface {
 	Close(ctx context.Context) error
 }
 
-func NewRetriableWrapper(rConf *retriable.RetriableInvokerConf, logger *zap.SugaredLogger, internalStorage Storage) *storage {
+func NewRetriable(rConf *retriable.RetriableInvokerConf, logger *zap.SugaredLogger, internalStorage Storage) *storage {
 	invoker := retriable.CreateRetriableInvokerConf(rConf, &zapLoggerWrapper{
 		logger: logger,
 	})

@@ -39,6 +39,7 @@ func (h *adminOperationAdpater) Ping(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	h.logger.Infow(action, "status", "ok")
 }
 
