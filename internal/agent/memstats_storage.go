@@ -6,22 +6,23 @@ import (
 	"sync/atomic"
 )
 
-func NewRuntimeMetricsSource() MetricsSource {
-	return &runtimeMetrics{}
+func NewMemStatsStorage() *memStatsSource {
+	return &memStatsSource{
+		poolCounter:    0,
+		memStatStorage: nil,
+	}
 }
 
-type runtimeMetrics struct {
-	counter int64
+type memStatsSource struct {
+	poolCounter    int64
+	memStatStorage map[string]float64
 }
 
-func (rm *runtimeMetrics) PollCount() int64 {
-	return rm.counter
-}
-
-func (rm *runtimeMetrics) PollMetrics() map[string]float64 {
-	defer atomic.AddInt64(&rm.counter, 1)
+func (m *memStatsSource) Refresh() error {
+	defer atomic.AddInt64(&m.poolCounter, 1)
 	var memStats runtime.MemStats
-	return map[string]float64{
+	runtime.ReadMemStats(&memStats)
+	m.memStatStorage = map[string]float64{
 		"Alloc":         float64(memStats.Alloc),
 		"BuckHashSys":   float64(memStats.BuckHashSys),
 		"Frees":         float64(memStats.Frees),
@@ -51,4 +52,25 @@ func (rm *runtimeMetrics) PollMetrics() map[string]float64 {
 		"TotalAlloc":    float64(memStats.TotalAlloc),
 		"RandomValue":   rand.Float64(),
 	}
+	return nil
+}
+
+func (m *memStatsSource) GetMetrics() []Metrics {
+	var metrics []Metrics
+	for k, v := range m.memStatStorage {
+		value := v
+		metrics = append(metrics, Metrics{
+			ID:    k,
+			MType: GaugeType,
+			Value: &value,
+		})
+	}
+
+	poolCount := m.poolCounter
+	metrics = append(metrics, Metrics{
+		ID:    "PollCount",
+		MType: CounterType,
+		Delta: &poolCount,
+	})
+	return metrics
 }

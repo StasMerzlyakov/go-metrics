@@ -1,45 +1,125 @@
 package server
 
 import (
+	"context"
 	"net/http"
+	"sync"
+	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal"
-	"github.com/StasMerzlyakov/go-metrics/internal/storage"
-	"github.com/go-chi/chi/v5"
+	"github.com/StasMerzlyakov/go-metrics/internal/config"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
+	"go.uber.org/zap"
 )
 
-func CreateServer(config *Configuration) error {
-	serverHandler := CreateServerHandler()
-	server := &http.Server{Addr: config.url, Handler: serverHandler, ReadTimeout: 0, IdleTimeout: 0}
-	return server.ListenAndServe()
+type Backuper interface {
+	RestoreBackUp() error
+	DoBackUp() error
 }
 
-func CreateServerHandler() http.Handler {
-	counterStorage := storage.NewMemoryInt64Storage()
-	gaugeStorage := storage.NewMemoryFloat64Storage()
-	metricController := NewMetricController(counterStorage, gaugeStorage)
-	businessHandler := NewBusinessHandler(metricController)
-	return CreateFullHTTPHandler(businessHandler)
+type ChangeListenerHolder interface {
+	AddListener(changeListener domain.ChangeListener)
 }
 
-func CreateFullHTTPHandler(businessHandler BusinessHandler) http.Handler {
+func NewMetricsServer(
+	config *config.ServerConfiguration,
+	sugar *zap.SugaredLogger,
+	httpHandler http.Handler,
+	holder ChangeListenerHolder,
+	backUper Backuper,
+) *meterServer {
 
-	fullGaugeHandler := CreateFullPostGaugeHandler(businessHandler.PostGauge)
-	fullCounterHandler := CreateFullPostCounterHandler(businessHandler.PostCounter)
-	r := chi.NewRouter()
-	r.Get("/", businessHandler.AllMetrics)
-	r.Post("/update/gauge/{name}/{value}", fullGaugeHandler)
+	sugar.Infow("ServerConfig", "config", config)
 
-	r.Route("/update", func(r chi.Router) {
-		r.Post("/gauge/{name}/{value}", fullGaugeHandler)
-		r.Post("/gauge/{name}", internal.StatusNotFound)
-		r.Post("/counter/{name}/{value}", fullCounterHandler)
-		r.Post("/{type}/{name}/{value}", internal.StatusNotImplemented)
-	})
+	// restore backup
+	if backUper != nil && config.Restore {
+		if err := backUper.RestoreBackUp(); err != nil {
+			panic(err)
+		}
+	}
 
-	r.Route("/value", func(r chi.Router) {
-		r.Get("/gauge/{name}", businessHandler.GetGauge)
-		r.Get("/counter/{name}", businessHandler.GetCounter)
-	})
-	return r
+	// проверяем - нужен ли синхронный бэкап
+	doSyncBackup := config.StoreInterval == 0
+	if doSyncBackup && backUper != nil {
+		sugar.Warnw("NewMetricsServer", "msg", "backup work in sync mode")
+		// синхронный бэкап реализован через мехинизм листенеров изменений
+		//  (изменение данных может происходить и не только через http)
+		holder.AddListener(&backupSyncListener{
+			backUper: backUper,
+		})
+	}
+
+	return &meterServer{
+		srv: &http.Server{
+			Addr:        config.URL,
+			Handler:     httpHandler,
+			ReadTimeout: 0,
+			IdleTimeout: 0,
+		},
+		doSyncBackup:            doSyncBackup,
+		backaupStoreIntervalSec: config.StoreInterval,
+		sugar:                   sugar,
+		backUper:                backUper,
+	}
+}
+
+type meterServer struct {
+	sugar                   *zap.SugaredLogger
+	srv                     *http.Server
+	wg                      sync.WaitGroup
+	backUper                Backuper
+	startContext            context.Context
+	backaupStoreIntervalSec uint
+	doSyncBackup            bool
+}
+
+func (s *meterServer) ServeBackup(ctx context.Context) error {
+
+	storeInterval := time.Duration(s.backaupStoreIntervalSec) * time.Second
+	for {
+		select {
+		case <-ctx.Done():
+			s.sugar.Infow("Run", "msg", "backup finished")
+			return nil
+
+		case <-time.After(storeInterval):
+			if err := s.backUper.DoBackUp(); err != nil {
+				s.sugar.Fatalw("DoBackUp", "msg", err.Error())
+			}
+		}
+	}
+}
+
+func (s *meterServer) Start(startContext context.Context) {
+	s.startContext = startContext
+	s.wg.Add(2)
+	go func() {
+		defer s.wg.Done()
+		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
+			s.sugar.Fatalw("srv.ListenAndServe", "msg", err.Error())
+		}
+	}()
+	if s.backUper != nil && !s.doSyncBackup {
+		go func() {
+			defer s.wg.Done()
+
+			if err := s.ServeBackup(startContext); err != nil {
+				s.sugar.Fatalw("ServeBackup", "msg", err.Error())
+			}
+		}()
+	}
+	s.sugar.Infof("Server started")
+}
+
+func (s *meterServer) WaitDone() {
+	s.srv.Shutdown(s.startContext)
+	s.wg.Wait()
+	s.sugar.Infof("WaitDone")
+}
+
+type backupSyncListener struct {
+	backUper Backuper
+}
+
+func (bsl *backupSyncListener) Refresh(*domain.Metrics) error {
+	return bsl.backUper.DoBackUp()
 }

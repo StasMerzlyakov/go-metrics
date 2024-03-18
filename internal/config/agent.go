@@ -1,4 +1,4 @@
-package agent
+package config
 
 import (
 	"flag"
@@ -8,15 +8,15 @@ import (
 	"github.com/caarlos0/env"
 )
 
-type Configuration struct {
+type AgentConfiguration struct {
 	ServerAddr     string `env:"ADDRESS"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 }
 
-func LoadConfig() (*Configuration, error) {
+func LoadAgentConfig() (*AgentConfiguration, error) {
 
-	agentCfg := &Configuration{}
+	agentCfg := &AgentConfiguration{}
 
 	flag.StringVar(&agentCfg.ServerAddr, "a", "localhost:8080", "serverAddress")
 	flag.IntVar(&agentCfg.PollInterval, "p", 2, "poolInterval in seconds")
