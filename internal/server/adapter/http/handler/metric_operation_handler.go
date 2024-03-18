@@ -175,6 +175,7 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 
 	opName := "PostGauge"
 	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
 
 	if !h.isContentTypeExpected(TextPlain, w, req) {
 		return
@@ -209,6 +210,7 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 
 	opName := "PostCounter"
 	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
 
 	if !h.isContentTypeExpected(TextPlain, w, req) {
 		return

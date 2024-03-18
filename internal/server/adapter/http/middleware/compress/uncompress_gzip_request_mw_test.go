@@ -36,6 +36,7 @@ func TestUncompressGZIPRequestMW(t *testing.T) {
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, r *http.Request) {
 			body, err := io.ReadAll(r.Body)
+			defer r.Body.Close()
 
 			if err != nil && err != io.EOF {
 				http.Error(w, "read body err", http.StatusInternalServerError)
