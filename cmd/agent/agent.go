@@ -8,25 +8,41 @@ import (
 	"syscall"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
+	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/config"
 )
 
+type Agent interface {
+	Start(ctx context.Context)
+	Wait()
+}
+
 func main() {
-	agentCfg, err := agent.LoadConfig()
+	agentCfg, err := config.LoadAgentConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	metricStorage := agent.NewMemStatsStorage()
+	resultSender := agent.NewHTTPResultSender(agentCfg.ServerAddr)
+	retryCfg := retriable.DefaultConf(syscall.ECONNREFUSED)
+	retryableResultSender := agent.NewHTTPRetryableResultSender(*retryCfg, resultSender)
+
+	var agnt Agent = agent.Create(agentCfg,
+		retryableResultSender,
+		metricStorage,
+	)
+
 	// Взято отсюда: "Реализация Graceful Shutdown в Go"(https://habr.com/ru/articles/771626/)
 	// Сейчас выглядит избыточным - оставил как задел на будущее для сервера
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancelFn := context.WithCancel(context.Background())
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
 
-	if agent, err := agent.CreateAgent(ctx, agentCfg); err != nil {
-		panic(err)
-	} else {
-		<-exit
-		cancel()
-		agent.Wait() // ожидаение завершения go-рутин в агенте
-	}
+	agnt.Start(ctx)
+	defer func() {
+		cancelFn()
+		agnt.Wait()
+	}()
+	<-exit
 }
