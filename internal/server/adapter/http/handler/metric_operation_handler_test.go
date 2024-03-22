@@ -31,13 +31,13 @@ func TestMetricOperation_Counter(t *testing.T) {
 
 	counterName := "TestCounter"
 
-	m.EXPECT().GetCounter(gomock.Any(), counterName).Return(&domain.Metrics{
+	m.EXPECT().Get(gomock.Any(), gomock.Eq(domain.CounterType), counterName).Return(&domain.Metrics{
 		ID:    counterName,
 		MType: domain.CounterType,
 		Delta: domain.DeltaPtr(testValue),
 	}, nil)
 
-	m.EXPECT().AddCounter(gomock.Any(), gomock.Any()).Return(nil)
+	m.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	r := chi.NewRouter()
 
@@ -79,13 +79,13 @@ func TestMetricOperation_Gague(t *testing.T) {
 
 	gaugeName := "TestGauge"
 
-	m.EXPECT().GetGauge(gomock.Any(), gaugeName).Return(&domain.Metrics{
+	m.EXPECT().Get(gomock.Any(), gomock.Eq(domain.GaugeType), gaugeName).Return(&domain.Metrics{
 		ID:    gaugeName,
 		MType: domain.GaugeType,
 		Value: domain.ValuePtr(testValue),
 	}, nil)
 
-	m.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil)
+	m.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	r := chi.NewRouter()
 
@@ -124,7 +124,7 @@ func TestMetricOperation_All(t *testing.T) {
 
 	m := mocks.NewMockMetricApp(ctrl)
 
-	m.EXPECT().GetAllMetrics(gomock.Any()).Return([]domain.Metrics{
+	m.EXPECT().GetAll(gomock.Any()).Return([]domain.Metrics{
 		{
 			ID:    "PoolCount",
 			MType: domain.CounterType,
@@ -166,18 +166,17 @@ func TestMetricOperation_Counter_Update(t *testing.T) {
 	testValue := int64(2)
 	counterName := "PoolCount"
 
-	m.EXPECT().AddCounter(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, m *domain.Metrics) error {
+	m.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, m *domain.Metrics) (*domain.Metrics, error) {
 			require.NotNil(t, m)
 			require.Equal(t, m.MType, domain.CounterType)
 			require.NotNil(t, m.Delta)
 			require.Equal(t, testValue, *m.Delta)
-			return nil
+			return m, nil
 		}).Times(1)
 
-	m.EXPECT().GetCounter(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, name string) (*domain.Metrics, error) {
-			require.Equal(t, counterName, name)
+	m.EXPECT().Get(gomock.Any(), gomock.Eq(domain.CounterType), gomock.Eq(counterName)).DoAndReturn(
+		func(ctx context.Context, metricType domain.MetricType, name string) (*domain.Metrics, error) {
 			return &domain.Metrics{
 				ID:    counterName,
 				MType: domain.CounterType,
@@ -240,18 +239,18 @@ func TestMetricOperation_Gague_Update(t *testing.T) {
 	testValue := float64(123.123)
 	gaugeName := "RandomValue"
 
-	m.EXPECT().SetGauge(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, m *domain.Metrics) error {
+	m.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, m *domain.Metrics) (*domain.Metrics, error) {
 			require.NotNil(t, m)
 			require.Equal(t, m.MType, domain.GaugeType)
 			require.Nil(t, m.Delta)
 			require.NotNil(t, m.Value)
 			require.Equal(t, testValue, *m.Value)
-			return nil
+			return m, nil
 		}).Times(1)
 
-	m.EXPECT().GetGauge(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, name string) (*domain.Metrics, error) {
+	m.EXPECT().Get(gomock.Any(), gomock.Eq(domain.GaugeType), gomock.Eq(gaugeName)).DoAndReturn(
+		func(ctx context.Context, metricType domain.MetricType, name string) (*domain.Metrics, error) {
 			require.Equal(t, gaugeName, name)
 			return &domain.Metrics{
 				ID:    gaugeName,
@@ -315,7 +314,7 @@ func TestMetricOperation_PostMetrics(t *testing.T) {
 	testValue := float64(123.123)
 	gaugeName := "RandomValue"
 
-	m.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(
+	m.EXPECT().UpdateAll(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(ctx context.Context, ms []domain.Metrics) error {
 			require.NotNil(t, ms)
 			require.Equal(t, 1, len(ms))

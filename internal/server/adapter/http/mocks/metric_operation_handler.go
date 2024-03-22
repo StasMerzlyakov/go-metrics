@@ -35,89 +35,61 @@ func (m *MockMetricApp) EXPECT() *MockMetricAppMockRecorder {
 	return m.recorder
 }
 
-// AddCounter mocks base method.
-func (m *MockMetricApp) AddCounter(arg0 context.Context, arg1 *domain.Metrics) error {
+// Get mocks base method.
+func (m *MockMetricApp) Get(arg0 context.Context, arg1 domain.MetricType, arg2 string) (*domain.Metrics, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCounter", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*domain.Metrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// AddCounter indicates an expected call of AddCounter.
-func (mr *MockMetricAppMockRecorder) AddCounter(arg0, arg1 interface{}) *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockMetricAppMockRecorder) Get(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCounter", reflect.TypeOf((*MockMetricApp)(nil).AddCounter), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockMetricApp)(nil).Get), arg0, arg1, arg2)
 }
 
-// GetAllMetrics mocks base method.
-func (m *MockMetricApp) GetAllMetrics(arg0 context.Context) ([]domain.Metrics, error) {
+// GetAll mocks base method.
+func (m *MockMetricApp) GetAll(arg0 context.Context) ([]domain.Metrics, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllMetrics", arg0)
+	ret := m.ctrl.Call(m, "GetAll", arg0)
 	ret0, _ := ret[0].([]domain.Metrics)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAllMetrics indicates an expected call of GetAllMetrics.
-func (mr *MockMetricAppMockRecorder) GetAllMetrics(arg0 interface{}) *gomock.Call {
+// GetAll indicates an expected call of GetAll.
+func (mr *MockMetricAppMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMetrics", reflect.TypeOf((*MockMetricApp)(nil).GetAllMetrics), arg0)
-}
-
-// GetCounter mocks base method.
-func (m *MockMetricApp) GetCounter(arg0 context.Context, arg1 string) (*domain.Metrics, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCounter", arg0, arg1)
-	ret0, _ := ret[0].(*domain.Metrics)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCounter indicates an expected call of GetCounter.
-func (mr *MockMetricAppMockRecorder) GetCounter(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCounter", reflect.TypeOf((*MockMetricApp)(nil).GetCounter), arg0, arg1)
-}
-
-// GetGauge mocks base method.
-func (m *MockMetricApp) GetGauge(arg0 context.Context, arg1 string) (*domain.Metrics, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGauge", arg0, arg1)
-	ret0, _ := ret[0].(*domain.Metrics)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetGauge indicates an expected call of GetGauge.
-func (mr *MockMetricAppMockRecorder) GetGauge(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGauge", reflect.TypeOf((*MockMetricApp)(nil).GetGauge), arg0, arg1)
-}
-
-// SetGauge mocks base method.
-func (m *MockMetricApp) SetGauge(arg0 context.Context, arg1 *domain.Metrics) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetGauge", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetGauge indicates an expected call of SetGauge.
-func (mr *MockMetricAppMockRecorder) SetGauge(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGauge", reflect.TypeOf((*MockMetricApp)(nil).SetGauge), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMetricApp)(nil).GetAll), arg0)
 }
 
 // Update mocks base method.
-func (m *MockMetricApp) Update(arg0 context.Context, arg1 []domain.Metrics) error {
+func (m *MockMetricApp) Update(arg0 context.Context, arg1 *domain.Metrics) (*domain.Metrics, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*domain.Metrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Update indicates an expected call of Update.
 func (mr *MockMetricAppMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockMetricApp)(nil).Update), arg0, arg1)
+}
+
+// UpdateAll mocks base method.
+func (m *MockMetricApp) UpdateAll(arg0 context.Context, arg1 []domain.Metrics) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAll", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAll indicates an expected call of UpdateAll.
+func (mr *MockMetricAppMockRecorder) UpdateAll(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAll", reflect.TypeOf((*MockMetricApp)(nil).UpdateAll), arg0, arg1)
 }
