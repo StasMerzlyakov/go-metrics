@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"runtime"
 	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
@@ -24,7 +23,7 @@ var ErrMediaType = errors.New("UnsupportedMediaTypeError") // ошибку оп�
 //go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . MetricApp
 
 type MetricApp interface {
-	GetAll(ctx context.Context) ([]domain.Metrics, error)
+	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
 	Get(ctx context.Context, metricType domain.MetricType, name string) (*domain.Metrics, error)
 	UpdateAll(ctx context.Context, mtr []domain.Metrics) error
 	Update(ctx context.Context, mtr *domain.Metrics) (*domain.Metrics, error)
@@ -67,19 +66,19 @@ type metricOperationAdapter struct {
 func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Request) {
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	var metrics []domain.Metrics
 	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
 		fullErr := fmt.Errorf("%w: json decode error - %v", domain.ErrDataFormat, err.Error())
-		h.handlerAppError(w, fullErr)
+		handleAppError(w, fullErr, h.logger)
 		return
 	}
 
 	if err := h.metricApp.UpdateAll(req.Context(), metrics); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -89,7 +88,7 @@ func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Re
 func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -97,18 +96,18 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 
 	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
 		fullErr := fmt.Errorf("%w: json decode error - %v", domain.ErrDataFormat, err.Error())
-		h.handlerAppError(w, fullErr)
+		handleAppError(w, fullErr, h.logger)
 		return
 	}
 
 	updatedMetric, err := h.metricApp.Update(req.Context(), metrics)
 	if err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	if err := h.sendMetrics(w, updatedMetric); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -118,25 +117,31 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	var metrics *domain.Metrics
 	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
 		fullErr := fmt.Errorf("%w: json decode error - %v", domain.ErrDataFormat, err.Error())
-		h.handlerAppError(w, fullErr)
+		handleAppError(w, fullErr, h.logger)
 		return
 	}
 
 	value, err := h.metricApp.Get(req.Context(), metrics.MType, metrics.ID)
 	if err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
+		return
+	}
 
+	if value == nil {
+		err := fmt.Errorf("%w: unknown metric '%v'", domain.ErrNotFound, metrics.ID)
+		handleAppError(w, err, h.logger)
+		return
 	}
 
 	if err := h.sendMetrics(w, value); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -145,7 +150,7 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -157,12 +162,12 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	if value, err = h.extractFloat64(req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -173,7 +178,7 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 	}
 
 	if _, err := h.metricApp.Update(req.Context(), metrics); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -182,7 +187,7 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -194,12 +199,12 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	if value, err = h.extractInt64(req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -210,7 +215,7 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 	}
 
 	if _, err := h.metricApp.Update(req.Context(), metrics); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -223,18 +228,24 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	value, err := h.metricApp.Get(req.Context(), domain.CounterType, name)
 	if err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
+		return
+	}
+
+	if value == nil {
+		err := fmt.Errorf("%w: unknown metric '%v'", domain.ErrNotFound, name)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	if _, err := w.Write([]byte(fmt.Sprintf("%v", *value.Delta))); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -247,18 +258,24 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	value, err := h.metricApp.Get(req.Context(), domain.GaugeType, name)
 	if err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
+		return
+	}
+
+	if value == nil {
+		err := fmt.Errorf("%w: unknown metric '%v'", domain.ErrNotFound, name)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	if _, err := w.Write([]byte(fmt.Sprintf("%v", *value.Value))); err != nil {
-		h.handlerAppError(w, err)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
@@ -266,19 +283,20 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 }
 
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
-	metricses, err := h.metricApp.GetAll(request.Context())
+	metricses, err := h.metricApp.GetAllMetrics(request.Context())
 	if err != nil {
-		h.handlerAppError(w, err)
-		return
-	}
-
-	if err := allMetricsViewTmplate.Execute(w, metricses); err != nil {
-		fullErr := fmt.Errorf("%w: generate result error - %v", domain.ErrServerInternal, err.Error())
-		h.handlerAppError(w, fullErr)
+		handleAppError(w, err, h.logger)
 		return
 	}
 
 	w.Header().Set("Content-Type", TextHTML)
+
+	if err := allMetricsViewTmplate.Execute(w, metricses); err != nil {
+		fullErr := fmt.Errorf("%w: generate result error - %v", domain.ErrServerInternal, err.Error())
+		handleAppError(w, fullErr, h.logger)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -294,7 +312,7 @@ var allMetricsViewTmplate, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>
     {{ range .}}<tr>
         <td>{{ .MType }}</td>
         <td>{{ .ID }}</td>
-		{{if .Delta}}<td>{{ .Delta }}</td>{{else}}<td>{{ .Value }}</td>{{end}}
+        {{if .Delta}}<td>{{ .Delta }}</td>{{else}}<td>{{ .Value }}</td>{{end}}
     </tr>{{ end}}
 </table>
 </body>
@@ -347,37 +365,4 @@ func (h *metricOperationAdapter) extractInt64(req *http.Request) (int64, error) 
 		return 0, fullErr
 	}
 	return value, nil
-}
-
-func (h *metricOperationAdapter) handlerAppError(w http.ResponseWriter, err error) {
-
-	// используется для получения имени вызывющей функции
-	// по мотивам https://stackoverflow.com/questions/25927660/how-to-get-the-current-function-name
-	pc, _, _, _ := runtime.Caller(1)
-	action := runtime.FuncForPC(pc).Name()
-
-	if errors.Is(err, ErrMediaType) {
-		h.logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if errors.Is(err, domain.ErrDataFormat) {
-		h.logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if errors.Is(err, domain.ErrServerInternal) ||
-		errors.Is(err, domain.ErrDBConnection) {
-		h.logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if errors.Is(err, domain.ErrNotFound) {
-		h.logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
 }

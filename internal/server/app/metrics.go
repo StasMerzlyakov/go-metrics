@@ -34,6 +34,38 @@ func NewMetrics(storage Storage) *metricsUseCase {
 
 var nameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")
 
+func (mc *metricsUseCase) Get(ctx context.Context, metricType domain.MetricType, name string) (*domain.Metrics, error) {
+	switch metricType {
+	case domain.CounterType:
+		return mc.GetCounter(ctx, name)
+	case domain.GaugeType:
+		return mc.GetGauge(ctx, name)
+	default:
+		return nil, fmt.Errorf("%w: unknown metricType '%v'", domain.ErrDataFormat, metricType)
+	}
+}
+
+func (mc *metricsUseCase) Update(ctx context.Context, mtr *domain.Metrics) (*domain.Metrics, error) {
+	if mtr == nil {
+		return nil, fmt.Errorf("%w: input is null", domain.ErrDataFormat)
+	}
+
+	switch mtr.MType {
+	case domain.CounterType:
+		if err := mc.AddCounter(ctx, mtr); err != nil {
+			return nil, err
+		}
+		return mtr, nil
+	case domain.GaugeType:
+		if err := mc.SetGauge(ctx, mtr); err != nil {
+			return nil, err
+		}
+		return mtr, nil
+	default:
+		return nil, fmt.Errorf("%w: unknown metricType '%v'", domain.ErrDataFormat, mtr.MType)
+	}
+}
+
 func (mc *metricsUseCase) AddListener(changeListener domain.ChangeListener) {
 	mc.changeListeners = append(mc.changeListeners, changeListener)
 }
@@ -148,7 +180,7 @@ func (mc *metricsUseCase) SetGauge(ctx context.Context, m *domain.Metrics) error
 	return nil
 }
 
-func (mc *metricsUseCase) Update(ctx context.Context, mtr []domain.Metrics) error {
+func (mc *metricsUseCase) UpdateAll(ctx context.Context, mtr []domain.Metrics) error {
 	var gaugeList []domain.Metrics
 	var counterList []domain.Metrics
 

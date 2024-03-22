@@ -124,7 +124,7 @@ func TestMetricOperation_All(t *testing.T) {
 
 	m := mocks.NewMockMetricApp(ctrl)
 
-	m.EXPECT().GetAll(gomock.Any()).Return([]domain.Metrics{
+	m.EXPECT().GetAllMetrics(gomock.Any()).Return([]domain.Metrics{
 		{
 			ID:    "PoolCount",
 			MType: domain.CounterType,

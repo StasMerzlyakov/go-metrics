@@ -50,19 +50,19 @@ func (mr *MockMetricAppMockRecorder) Get(arg0, arg1, arg2 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockMetricApp)(nil).Get), arg0, arg1, arg2)
 }
 
-// GetAll mocks base method.
-func (m *MockMetricApp) GetAll(arg0 context.Context) ([]domain.Metrics, error) {
+// GetAllMetrics mocks base method.
+func (m *MockMetricApp) GetAllMetrics(arg0 context.Context) ([]domain.Metrics, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", arg0)
+	ret := m.ctrl.Call(m, "GetAllMetrics", arg0)
 	ret0, _ := ret[0].([]domain.Metrics)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll.
-func (mr *MockMetricAppMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
+// GetAllMetrics indicates an expected call of GetAllMetrics.
+func (mr *MockMetricAppMockRecorder) GetAllMetrics(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMetricApp)(nil).GetAll), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMetrics", reflect.TypeOf((*MockMetricApp)(nil).GetAllMetrics), arg0)
 }
 
 // Update mocks base method.
