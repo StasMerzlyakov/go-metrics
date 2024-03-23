@@ -82,7 +82,6 @@ func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
@@ -110,8 +109,6 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 		handleAppError(w, err, h.logger)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
@@ -144,7 +141,6 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 		handleAppError(w, err, h.logger)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
@@ -181,7 +177,6 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 		handleAppError(w, err, h.logger)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
@@ -218,7 +213,6 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 		handleAppError(w, err, h.logger)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
@@ -248,7 +242,6 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 		handleAppError(w, err, h.logger)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
@@ -279,7 +272,6 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
@@ -296,8 +288,6 @@ func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, request *http
 		handleAppError(w, fullErr, h.logger)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 var allMetricsViewTmplate, _ = template.New("allMetrics").Parse(`<!DOCTYPE html>

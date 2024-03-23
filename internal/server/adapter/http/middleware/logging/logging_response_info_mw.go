@@ -14,7 +14,8 @@ type responseData struct {
 
 type loggingResponseWriter struct {
 	http.ResponseWriter
-	responseData *responseData
+	statusCodeFixed bool
+	responseData    *responseData
 }
 
 var _ http.ResponseWriter = (*loggingResponseWriter)(nil)
@@ -24,6 +25,9 @@ func (lw *loggingResponseWriter) Header() http.Header {
 }
 
 func (lw *loggingResponseWriter) Write(data []byte) (int, error) {
+	if !lw.statusCodeFixed {
+		lw.statusCodeFixed = true
+	}
 	size, err := lw.ResponseWriter.Write(data)
 	lw.responseData.size += size
 	return size, err
@@ -31,7 +35,10 @@ func (lw *loggingResponseWriter) Write(data []byte) (int, error) {
 
 func (lw *loggingResponseWriter) WriteHeader(statusCode int) {
 	lw.ResponseWriter.WriteHeader(statusCode)
-	lw.responseData.status = statusCode
+	if !lw.statusCodeFixed {
+		lw.responseData.status = statusCode
+		lw.statusCodeFixed = true
+	}
 }
 
 func NewLoggingResponseMW(log *zap.SugaredLogger) middleware.Middleware {
@@ -39,10 +46,11 @@ func NewLoggingResponseMW(log *zap.SugaredLogger) middleware.Middleware {
 		lrw := func(w http.ResponseWriter, r *http.Request) {
 			lw := &loggingResponseWriter{
 				responseData: &responseData{
-					status: 0,
+					status: http.StatusOK,
 					size:   0,
 				},
-				ResponseWriter: w,
+				statusCodeFixed: false,
+				ResponseWriter:  w,
 			}
 
 			next.ServeHTTP(lw, r)

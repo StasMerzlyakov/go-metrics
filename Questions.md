@@ -20,40 +20,16 @@
   (смущает некоторое дублирование кода и создание функциональные оберток в теле функций (будет ли при каждом вызове создаваться новая анонимная функция или компилятор оптимизирует такие вещи?))
 
 - Надо ли писать w.WriteHeader(http.StatusOK); 
-  Вроде как "почему нет" (Александр Передерей (при. Александр проверял у меня второй спринт; я его понял именно так, но возможности переспросить не было)):
-    После разных экспериментов с w.Header().Set(...), w.WriteHeader и  w.Write(..) сложилась следующая картина:
+  Вроде как "почему нет"?
+  но после разных экспериментов с w.Header().Set(...), w.WriteHeader и  w.Write(..) сложилась следующая картина:
     (с учетом того что в http сначала идет start-line с кодом ответа, потом хедеры, потом тело получается)
-       - w.Header().Set/Add работают только до вызова w.WriteHeader или w.Write(..)
+       - w.Header().Set/Add работают только до вызова w.WriteHeader или w.Write(..) (может пропутил, в теории было про только про w.Write(..))
        - если WriteHeader не был вызван, то используется значение 200
+       - если WriteHeader был вызвано - повторный вызов не повиляет
        - если Content-Type не был установлен до вызова w.WriteHeader или w.Write(..) то будет записано значение text/plain
-    При этом:
-      код
-        w.Header().Set("Content-Type", "hello")
-	      w.WriteHeader(http.StatusForbidden)
-
-	      w.Header().Set("Content-Type2", ApplicationJSON)
-	      w.WriteHeader(http.StatusBadGateway)
-
-	      w.Write([]byte("BEFORE ERROR"))
-	      http.Error(w, "TEST ERROR", http.StatusBadRequest)
-
-      выдает через curl:
-        * Mark bundle as not supporting multiuse
-        * < HTTP/1.1 403 Forbidden
-        * HTTP/1.1 403 Forbidden
-        * < Content-Type: hello
-        * Content-Type: hello
-        * < Date: Fri, 22 Mar 2024 21:05:39 GMT
-        * Date: Fri, 22 Mar 2024 21:05:39 GMT
-        * < Content-Length: 23
-        * Content-Length: 23
-
-        * < 
-        * BEFORE ERRORTEST ERROR
-        * Connection #0 to host localhost left intact
-      Зато текущая реализация loggingResponseWriter выдает 
-        logging/logging_response_info_mw.go:49  requestResult	{"statusCode": 400, "size": 23} !!!!!!!
-  Прим 1. Не хочу показаться занудой, просто при обработке больших по размеру сообщений вопрос кэширования ответа становиться очень интересным
+      Пришлось вность доработку в logging_response_info_mw
+      Убрал w.WriteHeader(http.StatusOK) в конце методов как бессмысленные
+  Прим  Не хочу занудствовать, просто при обработке больших по размеру сообщений вопрос внутреннего кэширования ответа становится актуальным
 
 - middleware/testutils/http_handler.go - добавил Handler интерфейс ради генерации mock. Можно ли как-то заставить gomock сгенерировать mock для стандартного интерфейса http.Handler (прим. в данном месте можно и обойтись).
 
