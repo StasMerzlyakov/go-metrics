@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -29,6 +30,10 @@ type adminOperationAdpater struct {
 }
 
 func (h *adminOperationAdpater) Ping(w http.ResponseWriter, req *http.Request) {
+
+	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
+
 	if err := h.adminApp.Ping(req.Context()); err != nil {
 		handleAppError(w, err, h.logger)
 		return

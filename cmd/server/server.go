@@ -15,6 +15,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
@@ -33,13 +34,16 @@ type Server interface {
 	Shutdown(ctx context.Context)
 }
 
-func createMiddleWareList(log *zap.SugaredLogger) []func(http.Handler) http.Handler {
-	return []func(http.Handler) http.Handler{
-		logging.NewLoggingResponseMW(log),
-		compress.NewCompressGZIPResponseMW(log), //compress.NewCompressGZIPBufferResponseMW(log),
-		compress.NewUncompressGZIPRequestMW(log),
-		logging.NewLoggingRequestMW(log),
+func createMiddleWareList(log *zap.SugaredLogger, srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
+	var mwList []func(http.Handler) http.Handler
+	mwList = append(mwList, logging.NewLoggingResponseMW(log))
+	mwList = append(mwList, compress.NewCompressGZIPResponseMW(log))
+	mwList = append(mwList, compress.NewUncompressGZIPRequestMW(log))
+	if srvConf.Key != "" {
+		mwList = append(mwList, digest.NewCheckHashDigestRequestBufferedMW(log, srvConf.Key))
 	}
+	mwList = append(mwList, logging.NewLoggingRequestMW(log))
+	return mwList
 }
 
 type FullStorage interface {
@@ -150,7 +154,7 @@ func main() {
 	httpHandler := chi.NewMux()
 
 	// мидлы
-	mwList := createMiddleWareList(sugarLog)
+	mwList := createMiddleWareList(sugarLog, srvConf)
 	middleware.Add(httpHandler, mwList...)
 
 	// операции с метриками

@@ -57,7 +57,8 @@ func handleAppError(w http.ResponseWriter, err error, logger *zap.SugaredLogger)
 		return
 	}
 
-	if errors.Is(err, domain.ErrDataFormat) {
+	if errors.Is(err, domain.ErrDataFormat) ||
+		errors.Is(err, domain.ErrDataDigestMismath) {
 		logger.Infow(action, "status", "error", "msg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

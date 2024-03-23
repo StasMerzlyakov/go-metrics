@@ -64,6 +64,7 @@ type metricOperationAdapter struct {
 }
 
 func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
 		handleAppError(w, err, h.logger)
@@ -85,6 +86,7 @@ func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Re
 }
 
 func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
 		handleAppError(w, err, h.logger)
@@ -112,6 +114,7 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 }
 
 func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
 		handleAppError(w, err, h.logger)
@@ -144,14 +147,13 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 }
 
 func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
+	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
 		handleAppError(w, err, h.logger)
 		return
 	}
-
-	_, _ = io.ReadAll(req.Body)
-	defer req.Body.Close()
 
 	var name string
 	var value float64
@@ -180,14 +182,13 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 }
 
 func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
+	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
 		handleAppError(w, err, h.logger)
 		return
 	}
-
-	_, _ = io.ReadAll(req.Body)
-	defer req.Body.Close()
 
 	var name string
 	var value int64
@@ -216,6 +217,9 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 }
 
 func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
+	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
+
 	w.Header().Set("Content-Type", TextPlain)
 
 	var name string
@@ -245,6 +249,9 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 }
 
 func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
+	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
+
 	w.Header().Set("Content-Type", TextPlain)
 
 	var name string
@@ -274,8 +281,11 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 
 }
 
-func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, request *http.Request) {
-	metricses, err := h.metricApp.GetAllMetrics(request.Context())
+func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, req *http.Request) {
+	_, _ = io.ReadAll(req.Body)
+	defer req.Body.Close()
+
+	metricses, err := h.metricApp.GetAllMetrics(req.Context())
 	if err != nil {
 		handleAppError(w, err, h.logger)
 		return
