@@ -20,9 +20,9 @@ func NewCheckHashDigestRequestBufferedMW(log *zap.SugaredLogger, key string) mid
 		cmprFn := func(w http.ResponseWriter, req *http.Request) {
 			hashSHA256Hex := req.Header.Get("HashSHA256")
 			if hashSHA256Hex == "" {
-				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataDigestMismath)
+				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataFormat)
 				log.Infow("check_hash_digest_request_mw", "err", errMsg.Error())
-				http.Error(w, errMsg.Error(), http.StatusBadRequest)
+				http.Error(w, errMsg.Error(), http.StatusNotFound)
 				return
 			}
 

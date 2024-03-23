@@ -29,7 +29,7 @@ type MetricApp interface {
 	Update(ctx context.Context, mtr *domain.Metrics) (*domain.Metrics, error)
 }
 
-func AddMetricOperations(r *chi.Mux, metricApp MetricApp, log *zap.SugaredLogger) {
+func AddMetricOperations(r *chi.Mux, metricApp MetricApp, log *zap.SugaredLogger, changeDataMw ...func(http.Handler) http.Handler) {
 
 	adapter := &metricOperationAdapter{
 		metricApp: metricApp,
@@ -39,6 +39,7 @@ func AddMetricOperations(r *chi.Mux, metricApp MetricApp, log *zap.SugaredLogger
 	r.Get("/", adapter.AllMetrics)
 
 	r.Route("/updates", func(r chi.Router) {
+		r.Use(changeDataMw...)
 		r.Post("/", adapter.PostMetrics)
 	})
 

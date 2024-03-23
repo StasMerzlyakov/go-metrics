@@ -25,14 +25,20 @@ import (
 func NewCheckHashDigestRequestMW(log *zap.SugaredLogger, key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {
+
+			if r.Method == "GET" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			hashSHA256Hex := r.Header.Get("HashSHA256")
 			if hashSHA256Hex == "" {
 				_, _ = io.ReadAll(r.Body)
 				defer r.Body.Close()
 
-				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataDigestMismath)
+				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataFormat)
 				log.Infow("check_hash_digest_request_mw", "err", errMsg.Error())
-				http.Error(w, errMsg.Error(), http.StatusBadRequest)
+				http.Error(w, errMsg.Error(), http.StatusNotFound)
 				return
 			}
 

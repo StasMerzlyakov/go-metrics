@@ -56,7 +56,7 @@ func TestCheckHashDigestRequestMW_1_Header_Not_Exists(t *testing.T) {
 
 	resp, err := req.Post(srv.URL)
 	require.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode())
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode())
 }
 
 func TestCheckHashDigestRequestMW_2_Header_Is_Not_Hex(t *testing.T) {

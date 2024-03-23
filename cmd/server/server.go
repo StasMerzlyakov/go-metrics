@@ -37,11 +37,12 @@ type Server interface {
 func createMiddleWareList(log *zap.SugaredLogger, srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
 	var mwList []func(http.Handler) http.Handler
 	mwList = append(mwList, logging.NewLoggingResponseMW(log))
+	if srvConf.Key != "" {
+		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(log, srvConf.Key))
+	}
 	mwList = append(mwList, compress.NewCompressGZIPResponseMW(log))
 	mwList = append(mwList, compress.NewUncompressGZIPRequestMW(log))
-	if srvConf.Key != "" {
-		mwList = append(mwList, digest.NewCheckHashDigestRequestBufferedMW(log, srvConf.Key))
-	}
+
 	mwList = append(mwList, logging.NewLoggingRequestMW(log))
 	return mwList
 }
@@ -159,7 +160,13 @@ func main() {
 
 	// операции с метриками
 	metricApp := app.NewMetrics(storage)
-	handler.AddMetricOperations(httpHandler, metricApp, sugarLog)
+
+	var updateMWList []func(http.Handler) http.Handler
+	if srvConf.Key != "" {
+		updateMWList = append(updateMWList, digest.NewCheckHashDigestRequestMW(sugarLog, srvConf.Key))
+	}
+
+	handler.AddMetricOperations(httpHandler, metricApp, sugarLog, updateMWList...)
 
 	// административные операции
 	adminApp := app.NewAdminApp(sugarLog, storage)
