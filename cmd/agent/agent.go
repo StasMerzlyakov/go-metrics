@@ -24,7 +24,7 @@ func main() {
 	}
 
 	metricStorage := agent.NewMemStatsStorage()
-	resultSender := agent.NewHTTPResultSender(agentCfg.ServerAddr)
+	resultSender := agent.NewHTTPResultSender(agentCfg.ServerAddr, agentCfg.Key)
 	retryCfg := retriable.DefaultConf(syscall.ECONNREFUSED)
 	retryableResultSender := agent.NewHTTPRetryableResultSender(*retryCfg, resultSender)
 
