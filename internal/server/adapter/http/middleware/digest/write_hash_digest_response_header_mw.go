@@ -35,21 +35,21 @@ func (hdw *hashDigestWriter) Write(data []byte) (int, error) {
 	return size, err
 }
 
-func (lw *hashDigestWriter) WriteHeader(statusCode int) {
-	hashValue := lw.hasher.Sum(nil)
-	lw.ResponseWriter.Header().Set("HashSHA256", hex.EncodeToString(hashValue))
-	lw.ResponseWriter.WriteHeader(statusCode)
+func (hdw *hashDigestWriter) WriteHeader(statusCode int) {
+	hashValue := hdw.hasher.Sum(nil)
+	hdw.ResponseWriter.Header().Set("HashSHA256", hex.EncodeToString(hashValue))
+	hdw.ResponseWriter.WriteHeader(statusCode)
 }
 
 func NewWriteHashDigestResponseHeaderMW(log *zap.SugaredLogger, key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		lrw := func(w http.ResponseWriter, r *http.Request) {
-			lw := &hashDigestWriter{
+			hdw := &hashDigestWriter{
 				hasher:         hmac.New(sha256.New, []byte(key)),
 				ResponseWriter: w,
 			}
 
-			next.ServeHTTP(lw, r)
+			next.ServeHTTP(hdw, r)
 		}
 		return http.HandlerFunc(lrw)
 	}
