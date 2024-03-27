@@ -34,7 +34,7 @@ func main() {
 	retryableResultSender := agent.NewHTTPRetryableResultSender(*retryCfg, resultSender)
 
 	// Отвечает за пулы отправки
-	limitedResultSender := agent.NewLimitResultSender(agentCfg, retryableResultSender)
+	limitedResultSender := agent.NewPoolResultSender(agentCfg, retryableResultSender)
 
 	var agnt Agent = agent.Create(agentCfg,
 		limitedResultSender,

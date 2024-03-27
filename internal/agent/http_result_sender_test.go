@@ -23,7 +23,7 @@ func TestHash256Header_No_Key(t *testing.T) {
 
 	clntConf := config.AgentConfiguration{
 		ServerAddr: srv.URL,
-		Key:        "test_key",
+		Key:        "",
 	}
 
 	sender := agent.NewHTTPResultSender(&clntConf)
