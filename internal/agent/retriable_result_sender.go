@@ -13,10 +13,6 @@ type Invoker interface {
 	Invoke(fn retriable.InvokableFn, ctx context.Context) error
 }
 
-type ResultSender interface {
-	SendMetrics(ctx context.Context, metrics []Metrics) error
-}
-
 func NewHTTPRetryableResultSender(rConf retriable.RetriableInvokerConf, resultSender ResultSender) *httpRetriableResultSender {
 	conf := retriable.DefaultConf(syscall.ECONNREFUSED)
 	return &httpRetriableResultSender{

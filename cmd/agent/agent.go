@@ -23,13 +23,21 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Отвечает за сбор метрик
 	metricStorage := agent.NewMemStatsStorage()
-	resultSender := agent.NewHTTPResultSender(agentCfg.ServerAddr)
+
+	// Отвечает за отправку по http
+	resultSender := agent.NewHTTPResultSender(agentCfg)
+
+	// Отвечает за повтор отправки
 	retryCfg := retriable.DefaultConf(syscall.ECONNREFUSED)
 	retryableResultSender := agent.NewHTTPRetryableResultSender(*retryCfg, resultSender)
 
+	// Отвечает за пулы отправки
+	limitedResultSender := agent.NewPoolResultSender(agentCfg, retryableResultSender)
+
 	var agnt Agent = agent.Create(agentCfg,
-		retryableResultSender,
+		limitedResultSender,
 		metricStorage,
 	)
 
