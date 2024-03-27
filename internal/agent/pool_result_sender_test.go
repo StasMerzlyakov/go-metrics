@@ -41,7 +41,7 @@ func TestPoolResultSenderCancellation_1(t *testing.T) {
 	}
 
 	sender.SendMetrics(ctx, metrics)
-	time.Sleep(1)
+	time.Sleep(1 * time.Second)
 	cancelFn()
 }
 
@@ -74,7 +74,7 @@ func TestPoolResultSenderCancellation_2(t *testing.T) {
 	}
 
 	sender.SendMetrics(ctx, metrics)
-	time.Sleep(1)
+	time.Sleep(1 * time.Second)
 	cancelFn()
 }
 
