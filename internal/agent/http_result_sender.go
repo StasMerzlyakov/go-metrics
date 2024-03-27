@@ -13,48 +13,27 @@ import (
 	"hash"
 	"io"
 	"net/http"
-	"strings"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 )
 
-func NewHTTPResultSender(serverAdd string, hash256Key string) *httpResultSender {
-	if !strings.HasPrefix(serverAdd, "http") {
-		serverAdd = "http://" + serverAdd
-	}
-	serverAdd = strings.TrimSuffix(serverAdd, "/")
+func NewHTTPResultSender(conf *config.AgentConfiguration) *httpResultSender {
 	return &httpResultSender{
-		serverAdd:  serverAdd,
+		serverAdd:  conf.ServerAddr,
 		client:     resty.New(),
-		batchSize:  5,
-		hash256Key: hash256Key,
+		hash256Key: conf.Key,
 	}
 }
 
 type httpResultSender struct {
 	serverAdd  string
 	client     *resty.Client
-	batchSize  int
 	hash256Key string
 }
 
 func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
-	logrus.Infof("SendMetrics start")
-	for i := 0; i*h.batchSize < len(metrics); i++ {
-		end := (i + 1) * h.batchSize
-		if (i+1)*h.batchSize > len(metrics) {
-			end = len(metrics)
-		}
-
-		if err := h.store(ctx, metrics[i*h.batchSize:end]); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (h *httpResultSender) store(ctx context.Context, metrics []Metrics) error {
 	var buf bytes.Buffer
 
 	var wc io.WriteCloser

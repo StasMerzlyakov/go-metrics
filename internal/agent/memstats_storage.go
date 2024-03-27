@@ -4,6 +4,9 @@ import (
 	"math/rand"
 	"runtime"
 	"sync/atomic"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 func NewMemStatsStorage() *memStatsSource {
@@ -52,6 +55,19 @@ func (m *memStatsSource) Refresh() error {
 		"TotalAlloc":    float64(memStats.TotalAlloc),
 		"RandomValue":   rand.Float64(),
 	}
+
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return err
+	}
+	m.memStatStorage["TotalMemory"] = float64(v.Total)
+	m.memStatStorage["FreeMemory"] = float64(v.Free)
+
+	res, err := cpu.Percent(0, false)
+	if err != nil {
+		return err
+	}
+	m.memStatStorage["CPUutilization1"] = float64(res[0])
 	return nil
 }
 

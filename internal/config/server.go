@@ -59,5 +59,6 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return srvConf, nil
 }

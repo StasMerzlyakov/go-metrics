@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
+	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +21,12 @@ func TestHash256Header_No_Key(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	sender := agent.NewHTTPResultSender(srv.URL, "")
+	clntConf := config.AgentConfiguration{
+		ServerAddr: srv.URL,
+		Key:        "test_key",
+	}
+
+	sender := agent.NewHTTPResultSender(&clntConf)
 
 	value := 1.
 	sender.SendMetrics(context.Background(), []agent.Metrics{
@@ -42,7 +48,12 @@ func TestHash256Header_With_Key(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	sender := agent.NewHTTPResultSender(srv.URL, "test_key")
+	clntConf := config.AgentConfiguration{
+		ServerAddr: srv.URL,
+		Key:        "test_key",
+	}
+
+	sender := agent.NewHTTPResultSender(&clntConf)
 
 	value := 1.
 	sender.SendMetrics(context.Background(), []agent.Metrics{
