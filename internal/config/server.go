@@ -15,6 +15,7 @@ type ServerConfiguration struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	Restore         bool   `env:"RESTORE"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	Key             string `env:"KEY"`
 }
 
 type RestoreConfiguration struct {
@@ -39,6 +40,7 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	flag.UintVar(&srvConf.StoreInterval, "i", 300, "Backup store interval in seconds")
 	flag.StringVar(&srvConf.FileStoragePath, "f", "/tmp/metrics-db.json", "Backup file path")
 	flag.StringVar(&srvConf.DatabaseDSN, "d", "", "PostgreSQL URL like 'postgres://username:password@localhost:5432/database_name'")
+	flag.StringVar(&srvConf.Key, "k", "", "hashSha256 key")
 
 	// Шаманстрва из-за того, что Go хитро обрабатывает Bool-флаги(проверяет просто наличие флага в коммандной строке)
 	restoreConf := &RestoreConfiguration{
@@ -57,5 +59,6 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return srvConf, nil
 }

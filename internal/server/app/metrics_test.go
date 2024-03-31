@@ -205,9 +205,68 @@ func TestUpdateMetrics(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			err := mc.Update(context.TODO(), test.input)
+			err := mc.UpdateAll(context.TODO(), test.input)
 			assert.NoError(t, err)
 		})
 	}
+}
 
+func TestUpdate_Counter(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockStorage(ctrl)
+
+	input := &domain.Metrics{
+		ID:    "Counter",
+		MType: domain.CounterType,
+		Delta: domain.DeltaPtr(1),
+	}
+
+	m.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, ms *domain.Metrics) error {
+			assert.NotNil(t, ms)
+			assert.Equal(t, domain.CounterType, ms.MType)
+			return nil
+		}).MaxTimes(1)
+
+	m.EXPECT().Get(gomock.Any(), gomock.Eq(input.ID), gomock.Eq(input.MType)).Return(
+		input, nil,
+	).MaxTimes(1)
+
+	mc := app.NewMetrics(m)
+
+	mtrs, err := mc.Update(context.TODO(), input)
+	assert.NoError(t, err)
+	assert.Equal(t, *input, *mtrs)
+}
+
+func TestUpdate_Gauge(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockStorage(ctrl)
+
+	input := &domain.Metrics{
+		ID:    "Gague",
+		MType: domain.GaugeType,
+		Value: domain.ValuePtr(1.),
+	}
+
+	m.EXPECT().Set(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, ms *domain.Metrics) error {
+			assert.NotNil(t, ms)
+			assert.Equal(t, domain.GaugeType, ms.MType)
+			return nil
+		}).MaxTimes(1)
+
+	m.EXPECT().Get(gomock.Any(), gomock.Eq(input.ID), gomock.Eq(input.MType)).Return(
+		input, nil,
+	).MaxTimes(1)
+
+	mc := app.NewMetrics(m)
+
+	mtrs, err := mc.Update(context.TODO(), input)
+	assert.NoError(t, err)
+	assert.Equal(t, *input, *mtrs)
 }
