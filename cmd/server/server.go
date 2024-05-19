@@ -40,7 +40,7 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 	if srvConf.Key != "" {
 		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))
 	}
-	mwList = append(mwList, compress.NewCompressGZIPResponseMW())
+	mwList = append(mwList, compress.NewCompressGZIPBufferResponseMW())
 	mwList = append(mwList, compress.NewUncompressGZIPRequestMW())
 
 	mwList = append(mwList, logging.NewLoggingRequestMW())
@@ -201,6 +201,5 @@ func main() {
 		cancelFn()
 		srv.Shutdown(srvCtx)
 	}()
-
 	<-exit
 }
