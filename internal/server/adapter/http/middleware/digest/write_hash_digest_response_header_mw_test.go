@@ -12,6 +12,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
