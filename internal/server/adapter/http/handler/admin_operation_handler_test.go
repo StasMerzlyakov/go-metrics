@@ -7,6 +7,7 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/mock/gomock"
@@ -25,7 +26,8 @@ func TestAdminOperation_Ping(t *testing.T) {
 	r := chi.NewRouter()
 
 	log := logger()
-	handler.AddAdminOperations(r, m, log)
+	domain.SetMainLogger(log)
+	handler.AddAdminOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()

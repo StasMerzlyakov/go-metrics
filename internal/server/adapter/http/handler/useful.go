@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"runtime"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"go.uber.org/zap"
 )
 
 const (
@@ -44,12 +42,10 @@ func TodoResponse(res http.ResponseWriter, message string) {
     `, message)
 }
 
-func handleAppError(w http.ResponseWriter, err error, logger *zap.SugaredLogger) {
+func handleAppError(w http.ResponseWriter, err error) {
+	logger := domain.GetMainLogger()
 
-	// используется для получения имени вызывющей функции
-	// по мотивам https://stackoverflow.com/questions/25927660/how-to-get-the-current-function-name
-	pc, _, _, _ := runtime.Caller(1)
-	action := runtime.FuncForPC(pc).Name()
+	action := domain.GetAction(2) //  интересует имя метода, из которого взывался handleAppError
 
 	if errors.Is(err, ErrMediaType) {
 		logger.Infow(action, "status", "error", "msg", err.Error())

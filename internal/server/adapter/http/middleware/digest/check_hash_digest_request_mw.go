@@ -22,9 +22,10 @@ import (
 //
 //	if err != nil && err != io.EOF {
 //		http.Error(w, err.Error(), http.StatusBadRequest)
-func NewCheckHashDigestRequestMW(log *zap.SugaredLogger, key string) middleware.Middleware {
+func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {
+			log := domain.GetMainLogger()
 
 			if r.Method == "GET" {
 				next.ServeHTTP(w, r)

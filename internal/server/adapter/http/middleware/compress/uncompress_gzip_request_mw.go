@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
-	"go.uber.org/zap"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
 type gzipreadCloser struct {
@@ -19,10 +19,11 @@ func (gz gzipreadCloser) Close() error {
 	return gz.Closer.Close()
 }
 
-func NewUncompressGZIPRequestMW(log *zap.SugaredLogger) middleware.Middleware {
+func NewUncompressGZIPRequestMW() middleware.Middleware {
 
 	return func(next http.Handler) http.Handler {
 		uncmprFn := func(w http.ResponseWriter, r *http.Request) {
+			log := domain.GetMainLogger()
 			contentEncodingHeader := r.Header.Get("Content-Encoding")
 			if strings.Contains(contentEncodingHeader, "gzip") {
 				zr, err := gzip.NewReader(r.Body)

@@ -57,10 +57,11 @@ var toWrite = []domain.Metrics{
 func TestJsonFormatter(t *testing.T) {
 
 	logger := getLogger()
+	domain.SetMainLogger(logger)
 	ctx := context.Background()
 
 	// Файл не указан
-	jF := backup.NewJSON(logger, "")
+	jF := backup.NewJSON("")
 	restored, err := jF.Read(ctx)
 	require.True(t, len(restored) == 0)
 	require.ErrorIs(t, os.ErrNotExist, err)
@@ -77,7 +78,7 @@ func TestJsonFormatter(t *testing.T) {
 	defer os.Remove(file.Name())
 
 	fileName := file.Name()
-	jF = backup.NewJSON(logger, fileName)
+	jF = backup.NewJSON(fileName)
 	restored, err = jF.Read(ctx)
 	require.Error(t, err) // EOF
 	require.True(t, len(restored) == 0)

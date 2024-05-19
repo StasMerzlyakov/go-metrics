@@ -6,13 +6,15 @@ import (
 	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	gPool "github.com/ungerik/go-pool"
 	"go.uber.org/zap"
 )
 
 // Вариант мидлы без дополнительного буфера при обработке ответа.
-func NewCompressGZIPResponseMW(log *zap.SugaredLogger) middleware.Middleware {
+func NewCompressGZIPResponseMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
+		log := domain.GetMainLogger()
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {
 			acceptEncodingReqHeader := r.Header.Get("Accept-Encoding")
 			if !strings.Contains(acceptEncodingReqHeader, "gzip") {

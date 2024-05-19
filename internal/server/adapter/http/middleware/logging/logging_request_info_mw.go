@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
-	"go.uber.org/zap"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-func NewLoggingRequestMW(log *zap.SugaredLogger) middleware.Middleware {
+func NewLoggingRequestMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		logReqFn := func(w http.ResponseWriter, req *http.Request) {
+			log := domain.GetMainLogger()
 			start := time.Now()
 			uri := req.RequestURI
 			method := req.Method

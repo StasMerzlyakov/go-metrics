@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
-	"go.uber.org/zap"
 )
 
 type hashDigestWriter struct {
@@ -41,7 +40,7 @@ func (hdw *hashDigestWriter) WriteHeader(statusCode int) {
 	hdw.ResponseWriter.WriteHeader(statusCode)
 }
 
-func NewWriteHashDigestResponseHeaderMW(log *zap.SugaredLogger, key string) middleware.Middleware {
+func NewWriteHashDigestResponseHeaderMW(key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		lrw := func(w http.ResponseWriter, r *http.Request) {
 			hdw := &hashDigestWriter{

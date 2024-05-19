@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"go.uber.org/zap"
 )
 
 //go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . AllMetricsStorage,BackupFormatter
@@ -20,16 +19,14 @@ type BackupFormatter interface {
 	Read(ctx context.Context) ([]domain.Metrics, error)
 }
 
-func NewBackup(suga *zap.SugaredLogger, storage AllMetricsStorage, formatter BackupFormatter) *backUper {
+func NewBackup(storage AllMetricsStorage, formatter BackupFormatter) *backUper {
 	return &backUper{
-		suga:      suga,
 		storage:   storage,
 		formatter: formatter,
 	}
 }
 
 type backUper struct {
-	suga      *zap.SugaredLogger
 	storage   AllMetricsStorage
 	formatter BackupFormatter
 }
@@ -44,7 +41,7 @@ func (bU *backUper) RestoreBackUp(ctx context.Context) error {
 }
 
 func (bU *backUper) DoBackUp(ctx context.Context) error {
-
+	logger := domain.GetMainLogger()
 	metrics, err := bU.storage.GetAllMetrics(ctx)
 	if err != nil {
 		return err
@@ -53,6 +50,6 @@ func (bU *backUper) DoBackUp(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	bU.suga.Infow("DoBackUp", "status", "ok", "msg", "backup is done")
+	logger.Infow("DoBackUp", "status", "ok", "msg", "backup is done")
 	return nil
 }

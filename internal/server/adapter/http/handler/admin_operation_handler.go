@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 )
 
 //go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . AdminApp
@@ -14,11 +13,10 @@ type AdminApp interface {
 	Ping(ctx context.Context) error
 }
 
-func AddAdminOperations(r *chi.Mux, adminApp AdminApp, log *zap.SugaredLogger) {
+func AddAdminOperations(r *chi.Mux, adminApp AdminApp) {
 
 	adapter := &adminOperationAdpater{
 		adminApp: adminApp,
-		logger:   log,
 	}
 
 	r.Get("/ping", adapter.Ping)
@@ -26,7 +24,6 @@ func AddAdminOperations(r *chi.Mux, adminApp AdminApp, log *zap.SugaredLogger) {
 
 type adminOperationAdpater struct {
 	adminApp AdminApp
-	logger   *zap.SugaredLogger
 }
 
 func (h *adminOperationAdpater) Ping(w http.ResponseWriter, req *http.Request) {
@@ -35,7 +32,7 @@ func (h *adminOperationAdpater) Ping(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
 	if err := h.adminApp.Ping(req.Context()); err != nil {
-		handleAppError(w, err, h.logger)
+		handleAppError(w, err)
 		return
 	}
 
