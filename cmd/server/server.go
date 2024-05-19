@@ -44,6 +44,7 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 	mwList = append(mwList, compress.NewUncompressGZIPRequestMW())
 
 	mwList = append(mwList, logging.NewLoggingRequestMW())
+
 	return mwList
 }
 
@@ -174,6 +175,9 @@ func main() {
 	adminApp := app.NewAdminApp(storage)
 	handler.AddAdminOperations(httpHandler, adminApp)
 
+	// ppfod
+	handler.AddPProfOperations(httpHandler)
+
 	// запускаем http-сервер
 	srv := &http.Server{
 		Addr:        srvConf.URL,
@@ -197,5 +201,6 @@ func main() {
 		cancelFn()
 		srv.Shutdown(srvCtx)
 	}()
+
 	<-exit
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
+	chiMW "github.com/go-chi/chi/v5/middleware"
 
 	_ "github.com/golang/mock/gomock"        // обязательно, требуется в сгенерированных mock-файлах,
 	_ "github.com/golang/mock/mockgen/model" // обязательно для корректного запуска mockgen
@@ -55,6 +56,11 @@ func AddMetricOperations(r *chi.Mux, metricApp MetricApp, changeDataMw ...func(h
 		r.Get("/gauge/{name}", adapter.GetGauge)
 		r.Get("/counter/{name}", adapter.GetCounter)
 	})
+
+}
+
+func AddPProfOperations(r *chi.Mux) {
+	r.Mount("/debug", chiMW.Profiler())
 }
 
 type metricOperationAdapter struct {
