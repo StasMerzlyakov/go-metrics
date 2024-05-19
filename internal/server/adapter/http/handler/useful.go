@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 

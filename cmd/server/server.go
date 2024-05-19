@@ -171,6 +171,7 @@ func main() {
 
 	handler.AddMetricOperations(httpHandler, metricApp, updateMWList...)
 
+
 	// административные операции
 	adminApp := app.NewAdminApp(storage)
 	handler.AddAdminOperations(httpHandler, adminApp)

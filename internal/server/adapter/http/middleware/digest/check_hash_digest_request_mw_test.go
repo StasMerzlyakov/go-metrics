@@ -120,6 +120,7 @@ func TestCheckHashDigestRequestMW_3_Digest_Mistmach(t *testing.T) {
 	defer logger.Sync()
 
 	suga := logger.Sugar()
+
 	domain.SetMainLogger(suga)
 
 	checkHashMW := digest.NewCheckHashDigestRequestMW("")
@@ -161,6 +162,7 @@ func TestCheckHashDigestRequestMW_4_Digest_OK(t *testing.T) {
 	defer logger.Sync()
 
 	suga := logger.Sugar()
+
 	domain.SetMainLogger(suga)
 
 	testKey := "testKey"
@@ -207,6 +209,7 @@ func TestCheckHashDigestRequestMW_4_Json_OK(t *testing.T) {
 		}).AnyTimes()
 
 	suga := logger.Sugar()
+
 	domain.SetMainLogger(suga)
 
 	testKey := "testKey"

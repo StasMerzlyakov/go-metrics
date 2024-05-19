@@ -30,7 +30,6 @@ type MetricApp interface {
 }
 
 func AddMetricOperations(r *chi.Mux, metricApp MetricApp, changeDataMw ...func(http.Handler) http.Handler) {
-
 	adapter := &metricOperationAdapter{
 		metricApp: metricApp,
 	}
@@ -282,7 +281,6 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 		handleAppError(w, err)
 		return
 	}
-
 }
 
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, req *http.Request) {
