@@ -24,4 +24,3 @@ vendor/
 .idea
 .vscode
 
-run_metrics_test.sh
