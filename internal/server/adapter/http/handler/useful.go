@@ -3,8 +3,9 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"net/http"
+
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
 const (
