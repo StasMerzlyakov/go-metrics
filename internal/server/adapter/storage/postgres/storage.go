@@ -194,7 +194,7 @@ func (st *storage) Ping(ctx context.Context) error {
 	logger.Infow("Ping", "status", "start")
 	if err := st.db.PingContext(ctx); err != nil {
 		logger.Infow("Ping", "status", "error", "msg", err.Error())
-		return err
+		return fmt.Errorf("Ping error: %w", err)
 	} else {
 		logger.Infow("Ping", "status", "ok")
 		return nil

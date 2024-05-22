@@ -66,6 +66,13 @@ type metricOperationAdapter struct {
 	metricApp MetricApp
 }
 
+// PostMetrics добавляет или обновляет данные о метриках.
+//
+// POST /updates/
+//
+// Content-Type: application/json.
+//
+// В запросе - массив структур [domain.Metrics].
 func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
@@ -88,6 +95,15 @@ func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Re
 
 }
 
+// PostMetric добавляет или обновляет данные о метрике.
+//
+// POST /update/.
+//
+// Content-Type: application/json.
+//
+// В запросе - cтруктура [domain.Metrics].
+//
+// Deprecated: заменен на [PostMetrics].
 func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
@@ -116,6 +132,17 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 	}
 }
 
+// ValueMetric используетвя для получения значений метрике.
+//
+// POST /value/
+//
+// Content-Type: application/json.
+//
+// В запросе: структура [domain.Metrics] с заполненными полями [Metrics.MType] и [Metrics.ID].
+// В ответе:
+//
+//	http.StatusOK и заполненныя структура [domain.Metrics] - если данные найден
+//	http.StatusNotFound - если данных нет
 func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
@@ -149,6 +176,9 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 	}
 }
 
+// PostGauge используется для добавления метрики типа Gauge
+// POST /gauge/{name}/{value}
+// ContentType: "text/plain"
 func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	defer req.Body.Close()
@@ -184,6 +214,9 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 	}
 }
 
+// PostGauge используется для добавления метрики типа Counter
+// POST /update/counter/{name}/{value}
+// ContentType: "text/plain"
 func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	defer req.Body.Close()
@@ -219,6 +252,9 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 	}
 }
 
+// GetCounter используется получения данных о метрике типа Counter
+// GET /value/counter/{name}/{value}
+// ContentType: "text/plain"
 func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	defer req.Body.Close()
@@ -251,6 +287,9 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 	}
 }
 
+// GetGauge используется получения данных о метрике типа Gauge
+// GET /value/gauge/{name}/{value}
+// ContentType: "text/plain"
 func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	defer req.Body.Close()
@@ -283,6 +322,8 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 	}
 }
 
+// Используется для получения всех значений метрики
+// GET /
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, req *http.Request) {
 	_, _ = io.ReadAll(req.Body)
 	defer req.Body.Close()

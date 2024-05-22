@@ -26,6 +26,10 @@ type adminOperationAdpater struct {
 	adminApp AdminApp
 }
 
+// Ping Отвечает за проверку соединения с базой данных.
+//
+// GET /ping
+// Возвращает [http.StatusOK] в случае успешной проверки.
 func (h *adminOperationAdpater) Ping(w http.ResponseWriter, req *http.Request) {
 
 	_, _ = io.ReadAll(req.Body)
