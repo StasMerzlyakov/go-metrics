@@ -1,5 +1,6 @@
 package domain
 
+// Metrics используется для передачи данных о метриках при взаимодействии с сервисом сбора метрик.
 type Metrics struct {
 	ID    string     `json:"id"`              // имя метрики
 	MType MetricType `json:"type"`            // параметр, принимающий значение gauge или counter
@@ -9,6 +10,7 @@ type Metrics struct {
 
 type MetricType string
 
+// Допустимые значения типа метрики
 const (
 	GaugeType   MetricType = "gauge"
 	CounterType MetricType = "counter"

@@ -11,6 +11,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -25,6 +26,7 @@ func TestUncompressGZIPRequestMW(t *testing.T) {
 	defer logger.Sync()
 
 	suga := logger.Sugar()
+	domain.SetMainLogger(suga)
 
 	content := []byte("Hello World")
 
@@ -47,7 +49,7 @@ func TestUncompressGZIPRequestMW(t *testing.T) {
 			}
 		}).AnyTimes()
 
-	uncompressMW := compress.NewUncompressGZIPRequestMW(suga)
+	uncompressMW := compress.NewUncompressGZIPRequestMW()
 
 	srv := httptest.NewServer(middleware.Conveyor(mockHandler, uncompressMW))
 	defer srv.Close()

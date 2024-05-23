@@ -1,6 +1,9 @@
 package domain
 
-import "strconv"
+import (
+	"runtime"
+	"strconv"
+)
 
 func DeltaPtr(v int64) *int64 {
 	return &v
@@ -24,4 +27,12 @@ func ExtractInt64(valueStr string) (int64, error) {
 		return -1, err
 	}
 	return value, nil
+}
+
+func GetAction(depth int) string {
+	// используется для получения имени вызывющей функции
+	// по мотивам https://stackoverflow.com/questions/25927660/how-to-get-the-current-function-name
+	pc, _, _, _ := runtime.Caller(depth)
+	action := runtime.FuncForPC(pc).Name()
+	return action
 }

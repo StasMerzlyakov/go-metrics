@@ -21,6 +21,9 @@ import (
 
 func TestMetricOperation_Counter(t *testing.T) {
 
+	log := logger()
+	domain.SetMainLogger(log)
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -41,8 +44,7 @@ func TestMetricOperation_Counter(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	log := logger()
-	handler.AddMetricOperations(r, m, log)
+	handler.AddMetricOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -69,6 +71,9 @@ func TestMetricOperation_Counter(t *testing.T) {
 
 func TestMetricOperation_Gague(t *testing.T) {
 
+	log := logger()
+	domain.SetMainLogger(log)
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -89,8 +94,7 @@ func TestMetricOperation_Gague(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	log := logger()
-	handler.AddMetricOperations(r, m, log)
+	handler.AddMetricOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -118,7 +122,7 @@ func TestMetricOperation_Gague(t *testing.T) {
 func TestMetricOperation_All(t *testing.T) {
 
 	log := logger()
-
+	domain.SetMainLogger(log)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -139,7 +143,7 @@ func TestMetricOperation_All(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperations(r, m, log)
+	handler.AddMetricOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -157,6 +161,7 @@ func TestMetricOperation_All(t *testing.T) {
 
 func TestMetricOperation_Counter_Update(t *testing.T) {
 	log := logger()
+	domain.SetMainLogger(log)
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -186,7 +191,7 @@ func TestMetricOperation_Counter_Update(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperations(r, m, log)
+	handler.AddMetricOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -230,6 +235,7 @@ func TestMetricOperation_Counter_Update(t *testing.T) {
 
 func TestMetricOperation_Gague_Update(t *testing.T) {
 	log := logger()
+	domain.SetMainLogger(log)
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -261,7 +267,7 @@ func TestMetricOperation_Gague_Update(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperations(r, m, log)
+	handler.AddMetricOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -305,6 +311,7 @@ func TestMetricOperation_Gague_Update(t *testing.T) {
 
 func TestMetricOperation_PostMetrics(t *testing.T) {
 	log := logger()
+	domain.SetMainLogger(log)
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -327,7 +334,7 @@ func TestMetricOperation_PostMetrics(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	handler.AddMetricOperations(r, m, log)
+	handler.AddMetricOperations(r, m)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()

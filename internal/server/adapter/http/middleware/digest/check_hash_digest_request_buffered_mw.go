@@ -11,12 +11,12 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"go.uber.org/zap"
 )
 
 // Реализация с буфером. Хэш проверяется прямо в мидле. Для этого читается req.Body
-func NewCheckHashDigestRequestBufferedMW(log *zap.SugaredLogger, key string) middleware.Middleware {
+func NewCheckHashDigestRequestBufferedMW(key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
+		log := domain.GetMainLogger()
 		cmprFn := func(w http.ResponseWriter, req *http.Request) {
 			hashSHA256Hex := req.Header.Get("HashSHA256")
 			if hashSHA256Hex == "" {

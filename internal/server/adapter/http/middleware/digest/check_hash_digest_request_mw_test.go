@@ -44,8 +44,9 @@ func TestCheckHashDigestRequestMW_1_Header_Not_Exists(t *testing.T) {
 	defer logger.Sync()
 
 	suga := logger.Sugar()
+	domain.SetMainLogger(suga)
 
-	checkHashMW := digest.NewCheckHashDigestRequestMW(suga, "")
+	checkHashMW := digest.NewCheckHashDigestRequestMW("")
 
 	srv := httptest.NewServer(middleware.Conveyor(mockHandler, checkHashMW))
 	defer srv.Close()
@@ -81,7 +82,9 @@ func TestCheckHashDigestRequestMW_2_Header_Is_Not_Hex(t *testing.T) {
 
 	suga := logger.Sugar()
 
-	checkHashMW := digest.NewCheckHashDigestRequestMW(suga, "")
+	domain.SetMainLogger(suga)
+
+	checkHashMW := digest.NewCheckHashDigestRequestMW("")
 
 	srv := httptest.NewServer(middleware.Conveyor(mockHandler, checkHashMW))
 	defer srv.Close()
@@ -118,7 +121,9 @@ func TestCheckHashDigestRequestMW_3_Digest_Mistmach(t *testing.T) {
 
 	suga := logger.Sugar()
 
-	checkHashMW := digest.NewCheckHashDigestRequestMW(suga, "")
+	domain.SetMainLogger(suga)
+
+	checkHashMW := digest.NewCheckHashDigestRequestMW("")
 
 	srv := httptest.NewServer(middleware.Conveyor(mockHandler, checkHashMW))
 	defer srv.Close()
@@ -158,8 +163,10 @@ func TestCheckHashDigestRequestMW_4_Digest_OK(t *testing.T) {
 
 	suga := logger.Sugar()
 
+	domain.SetMainLogger(suga)
+
 	testKey := "testKey"
-	checkHashMW := digest.NewCheckHashDigestRequestMW(suga, testKey)
+	checkHashMW := digest.NewCheckHashDigestRequestMW(testKey)
 
 	srv := httptest.NewServer(middleware.Conveyor(mockHandler, checkHashMW))
 	defer srv.Close()
@@ -203,8 +210,10 @@ func TestCheckHashDigestRequestMW_4_Json_OK(t *testing.T) {
 
 	suga := logger.Sugar()
 
+	domain.SetMainLogger(suga)
+
 	testKey := "testKey"
-	checkHashMW := digest.NewCheckHashDigestRequestMW(suga, testKey)
+	checkHashMW := digest.NewCheckHashDigestRequestMW(testKey)
 
 	srv := httptest.NewServer(middleware.Conveyor(mockHandler, checkHashMW))
 	defer srv.Close()

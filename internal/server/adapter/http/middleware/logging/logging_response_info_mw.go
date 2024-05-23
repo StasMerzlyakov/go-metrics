@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
-	"go.uber.org/zap"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
 type responseData struct {
@@ -41,8 +41,9 @@ func (lw *loggingResponseWriter) WriteHeader(statusCode int) {
 	}
 }
 
-func NewLoggingResponseMW(log *zap.SugaredLogger) middleware.Middleware {
+func NewLoggingResponseMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
+		log := domain.GetMainLogger()
 		lrw := func(w http.ResponseWriter, r *http.Request) {
 			lw := &loggingResponseWriter{
 				responseData: &responseData{

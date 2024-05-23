@@ -34,16 +34,17 @@ type Server interface {
 	Shutdown(ctx context.Context)
 }
 
-func createMiddleWareList(log *zap.SugaredLogger, srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
+func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
 	var mwList []func(http.Handler) http.Handler
-	mwList = append(mwList, logging.NewLoggingResponseMW(log))
+	mwList = append(mwList, logging.NewLoggingResponseMW())
 	if srvConf.Key != "" {
-		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(log, srvConf.Key))
+		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))
 	}
-	mwList = append(mwList, compress.NewCompressGZIPResponseMW(log))
-	mwList = append(mwList, compress.NewUncompressGZIPRequestMW(log))
+	mwList = append(mwList, compress.NewCompressGZIPBufferResponseMW())
+	mwList = append(mwList, compress.NewUncompressGZIPRequestMW())
 
-	mwList = append(mwList, logging.NewLoggingRequestMW(log))
+	mwList = append(mwList, logging.NewLoggingRequestMW())
+
 	return mwList
 }
 
@@ -75,11 +76,13 @@ func main() {
 
 	sugarLog := logger.Sugar()
 
+	domain.SetMainLogger(sugarLog)
+
 	// -------- Хранилище -------------
 	var storage FullStorage
 
 	if srvConf.DatabaseDSN != "" {
-		storage = postgres.NewStorage(sugarLog, srvConf.DatabaseDSN)
+		storage = postgres.NewStorage(srvConf.DatabaseDSN)
 
 		// при работе с Postgres добавляем retriable-обертку
 
@@ -117,8 +120,8 @@ func main() {
 	}
 
 	// -------- Бэкап ------------
-	backupFomratter := backup.NewJSON(sugarLog, srvConf.FileStoragePath)
-	backUper := app.NewBackup(sugarLog, storage, backupFomratter)
+	backupFomratter := backup.NewJSON(srvConf.FileStoragePath)
+	backUper := app.NewBackup(storage, backupFomratter)
 
 	if srvConf.Restore {
 		// восстановленгие бэкапа
@@ -155,7 +158,7 @@ func main() {
 	httpHandler := chi.NewMux()
 
 	// мидлы
-	mwList := createMiddleWareList(sugarLog, srvConf)
+	mwList := createMiddleWareList(srvConf)
 	middleware.Add(httpHandler, mwList...)
 
 	// операции с метриками
@@ -163,14 +166,17 @@ func main() {
 
 	var updateMWList []func(http.Handler) http.Handler
 	if srvConf.Key != "" {
-		updateMWList = append(updateMWList, digest.NewCheckHashDigestRequestMW(sugarLog, srvConf.Key))
+		updateMWList = append(updateMWList, digest.NewCheckHashDigestRequestMW(srvConf.Key))
 	}
 
-	handler.AddMetricOperations(httpHandler, metricApp, sugarLog, updateMWList...)
+	handler.AddMetricOperations(httpHandler, metricApp, updateMWList...)
 
 	// административные операции
-	adminApp := app.NewAdminApp(sugarLog, storage)
-	handler.AddAdminOperations(httpHandler, adminApp, sugarLog)
+	adminApp := app.NewAdminApp(storage)
+	handler.AddAdminOperations(httpHandler, adminApp)
+
+	// ppfod
+	handler.AddPProfOperations(httpHandler)
 
 	// запускаем http-сервер
 	srv := &http.Server{

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
-	"go.uber.org/zap"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
 type bufferWriter struct {
@@ -22,9 +22,10 @@ func (w bufferWriter) Write(b []byte) (int, error) {
 }
 
 // Вариант мидлы через буфер. Можно оценить ответ.
-func NewCompressGZIPBufferResponseMW(log *zap.SugaredLogger) middleware.Middleware {
+func NewCompressGZIPBufferResponseMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {
+			log := domain.GetMainLogger()
 			acceptEncodingReqHeader := r.Header.Get("Accept-Encoding")
 			if !strings.Contains(acceptEncodingReqHeader, "gzip") {
 				next.ServeHTTP(w, r)
