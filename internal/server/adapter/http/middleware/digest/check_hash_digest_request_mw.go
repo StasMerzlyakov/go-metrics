@@ -27,7 +27,7 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {
 			log := domain.GetMainLogger()
 
-			if r.Method == "GET" {
+			if r.Method == http.MethodGet {
 				next.ServeHTTP(w, r)
 				return
 			}

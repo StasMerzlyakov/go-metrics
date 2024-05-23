@@ -180,7 +180,11 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 // POST /gauge/{name}/{value}
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.ReadAll(req.Body)
+	if _, err := io.ReadAll(req.Body); err != nil {
+		handleAppError(w, err)
+		return
+	}
+
 	defer req.Body.Close()
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
@@ -218,7 +222,10 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 // POST /update/counter/{name}/{value}
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.ReadAll(req.Body)
+	if _, err := io.ReadAll(req.Body); err != nil {
+		handleAppError(w, err)
+		return
+	}
 	defer req.Body.Close()
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
@@ -256,7 +263,10 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 // GET /value/counter/{name}/{value}
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.ReadAll(req.Body)
+	if _, err := io.ReadAll(req.Body); err != nil {
+		handleAppError(w, err)
+		return
+	}
 	defer req.Body.Close()
 
 	w.Header().Set("Content-Type", TextPlain)
@@ -291,7 +301,10 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 // GET /value/gauge/{name}/{value}
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.ReadAll(req.Body)
+	if _, err := io.ReadAll(req.Body); err != nil {
+		handleAppError(w, err)
+		return
+	}
 	defer req.Body.Close()
 
 	w.Header().Set("Content-Type", TextPlain)
@@ -325,7 +338,10 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 // Используется для получения всех значений метрики
 // GET /
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.ReadAll(req.Body)
+	if _, err := io.ReadAll(req.Body); err != nil {
+		handleAppError(w, err)
+		return
+	}
 	defer req.Body.Close()
 
 	metricses, err := h.metricApp.GetAllMetrics(req.Context())
