@@ -21,21 +21,7 @@ type storage struct {
 	databaseURL string
 }
 
-var createCounterTableSQL = `CREATE TABLE IF NOT EXISTS counter(
-	name text not null,
-	value bigint,
-	PRIMARY KEY(name)
-);`
-
-var createGaugeTableSQL = `CREATE TABLE IF NOT EXISTS gauge(
-	name text not null,
-	value double precision,
-	PRIMARY KEY(name)
-);`
-
 func (st *storage) SetAllMetrics(ctx context.Context, in []domain.Metrics) error {
-	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("SetAllMetrics", "status", "start")
 	_, err := st.db.ExecContext(ctx, "TRUNCATE counter,gauge")
 
 	if err != nil {
@@ -76,8 +62,6 @@ func (st *storage) SetAllMetrics(ctx context.Context, in []domain.Metrics) error
 }
 
 func (st *storage) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) {
-	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("GetAllMetrics", "status", "start")
 	var metricsList []domain.Metrics
 	gaugeList, err := st.getAllGauge(ctx)
 	if err != nil {
@@ -111,8 +95,6 @@ func (st *storage) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) 
 }
 
 func (st *storage) Set(ctx context.Context, m *domain.Metrics) error {
-	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("Set", "status", "start")
 	switch m.MType {
 	case domain.CounterType:
 		delta := *m.Delta
@@ -128,8 +110,6 @@ func (st *storage) Set(ctx context.Context, m *domain.Metrics) error {
 }
 
 func (st *storage) Add(ctx context.Context, m *domain.Metrics) error {
-	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("Add", "status", "start")
 	switch m.MType {
 	case domain.CounterType:
 		delta := *m.Delta
@@ -158,9 +138,8 @@ func (st *storage) Get(ctx context.Context, id string, mType domain.MetricType) 
 
 func (st *storage) Bootstrap(ctx context.Context) error {
 	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("Bootstrap", "status", "start")
 	if db, err := sql.Open("pgx", st.databaseURL); err != nil {
-		logger.Infow("Bootstrap", "status", "error", "msg", err.Error())
+		logger.Errorw("Bootstrap", "status", "error", "msg", err.Error())
 		return err
 	} else {
 		st.db = db
@@ -191,31 +170,23 @@ func (st *storage) Bootstrap(ctx context.Context) error {
 
 func (st *storage) Ping(ctx context.Context) error {
 	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("Ping", "status", "start")
 	if err := st.db.PingContext(ctx); err != nil {
-		logger.Infow("Ping", "status", "error", "msg", err.Error())
+		logger.Errorw("Ping", "error", err.Error())
 		return fmt.Errorf("Ping error: %w", err)
-	} else {
-		logger.Infow("Ping", "status", "ok")
-		return nil
 	}
+	return nil
 }
 
 func (st *storage) Close(ctx context.Context) error {
 	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("Close", "status", "start")
 	if err := st.db.Close(); err != nil {
-		logger.Infow("Stop", "status", "error", "msg", err.Error())
+		logger.Errorw("Stop", "error", err.Error())
 		return err
-	} else {
-		logger.Infow("Stop", "status", "ok")
-		return nil
 	}
+	return nil
 }
 
 func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) error {
-	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("SetMetrics", "status", "start")
 	tx, err := st.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -255,8 +226,6 @@ func (st *storage) SetMetrics(ctx context.Context, metric []domain.Metrics) erro
 }
 
 func (st *storage) AddMetrics(ctx context.Context, metric []domain.Metrics) error {
-	logger := domain.GetCtxLogger(ctx)
-	logger.Infow("AddMetrics", "status", "start")
 	tx, err := st.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -394,10 +363,11 @@ func (st *storage) getAllGauge(ctx context.Context) ([]gauge, error) {
 
 func (st *storage) getCounter(ctx context.Context, id string) (*domain.Metrics, error) {
 	logger := domain.GetCtxLogger(ctx)
+	action := domain.GetAction(1)
 
 	rows, err := st.db.QueryContext(ctx, "SELECT name, value from counter WHERE name = $1", id)
 	if err != nil {
-		logger.Infow("getCounter", "status", "error", "msg", err.Error())
+		logger.Errorw(action, "status", "error", "msg", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -407,7 +377,7 @@ func (st *storage) getCounter(ctx context.Context, id string) (*domain.Metrics, 
 		var delta int64
 		err = rows.Scan(&name, &delta)
 		if err != nil {
-			logger.Infow("getCounter", "status", "error", "msg", err.Error())
+			logger.Errorw(action, "status", "error", "msg", err.Error())
 			return nil, err
 		}
 
@@ -428,10 +398,11 @@ func (st *storage) getCounter(ctx context.Context, id string) (*domain.Metrics, 
 
 func (st *storage) getGauge(ctx context.Context, id string) (*domain.Metrics, error) {
 	logger := domain.GetCtxLogger(ctx)
+	action := domain.GetAction(1)
 
 	rows, err := st.db.QueryContext(ctx, "SELECT name, value from gauge WHERE name = $1", id)
 	if err != nil {
-		logger.Infow("getGauge", "status", "error", "msg", err.Error())
+		logger.Errorw(action, "status", "error", "msg", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -441,7 +412,7 @@ func (st *storage) getGauge(ctx context.Context, id string) (*domain.Metrics, er
 		var value float64
 		err = rows.Scan(&name, &value)
 		if err != nil {
-			logger.Infow("getGauge", "status", "error", "msg", err.Error())
+			logger.Errorw(action, "status", "error", "msg", err.Error())
 			return nil, err
 		}
 
