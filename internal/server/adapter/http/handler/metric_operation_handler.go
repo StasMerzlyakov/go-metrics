@@ -77,19 +77,19 @@ func (h *metricOperationAdapter) PostMetrics(w http.ResponseWriter, req *http.Re
 	defer req.Body.Close()
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	var metrics []domain.Metrics
 	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
 		fullErr := fmt.Errorf("%w: json decode error - %v", domain.ErrDataFormat, err.Error())
-		handleAppError(w, fullErr)
+		handleAppError(req.Context(), w, fullErr)
 		return
 	}
 
 	if err := h.metricApp.UpdateAll(req.Context(), metrics); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 	defer req.Body.Close()
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -116,18 +116,18 @@ func (h *metricOperationAdapter) PostMetric(w http.ResponseWriter, req *http.Req
 
 	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
 		fullErr := fmt.Errorf("%w: json decode error - %v", domain.ErrDataFormat, err.Error())
-		handleAppError(w, fullErr)
+		handleAppError(req.Context(), w, fullErr)
 		return
 	}
 
 	updatedMetric, err := h.metricApp.Update(req.Context(), metrics)
 	if err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if err := h.sendMetrics(w, updatedMetric); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 }
@@ -147,31 +147,31 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 	defer req.Body.Close()
 
 	if err := h.checkContentType(ApplicationJSON, req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	var metrics *domain.Metrics
 	if err := json.NewDecoder(req.Body).Decode(&metrics); err != nil {
 		fullErr := fmt.Errorf("%w: json decode error - %v", domain.ErrDataFormat, err.Error())
-		handleAppError(w, fullErr)
+		handleAppError(req.Context(), w, fullErr)
 		return
 	}
 
 	value, err := h.metricApp.Get(req.Context(), metrics.MType, metrics.ID)
 	if err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if value == nil {
 		err := fmt.Errorf("%w: unknown metric '%v'", domain.ErrNotFound, metrics.ID)
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if err := h.sendMetrics(w, value); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 }
@@ -181,14 +181,14 @@ func (h *metricOperationAdapter) ValueMetric(w http.ResponseWriter, req *http.Re
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Request) {
 	if _, err := io.ReadAll(req.Body); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	defer req.Body.Close()
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -197,12 +197,12 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if value, err = h.extractFloat64(req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -213,7 +213,7 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 	}
 
 	if _, err := h.metricApp.Update(req.Context(), metrics); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 }
@@ -223,13 +223,13 @@ func (h *metricOperationAdapter) PostGauge(w http.ResponseWriter, req *http.Requ
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Request) {
 	if _, err := io.ReadAll(req.Body); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 	defer req.Body.Close()
 
 	if err := h.checkContentType(TextPlain, req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -238,12 +238,12 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if value, err = h.extractInt64(req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -254,7 +254,7 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 	}
 
 	if _, err := h.metricApp.Update(req.Context(), metrics); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 }
@@ -264,7 +264,7 @@ func (h *metricOperationAdapter) PostCounter(w http.ResponseWriter, req *http.Re
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Request) {
 	if _, err := io.ReadAll(req.Body); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 	defer req.Body.Close()
@@ -275,24 +275,24 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	value, err := h.metricApp.Get(req.Context(), domain.CounterType, name)
 	if err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if value == nil {
 		err := fmt.Errorf("%w: unknown metric '%v'", domain.ErrNotFound, name)
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if _, err := w.Write([]byte(fmt.Sprintf("%v", *value.Delta))); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 }
@@ -302,7 +302,7 @@ func (h *metricOperationAdapter) GetCounter(w http.ResponseWriter, req *http.Req
 // ContentType: "text/plain"
 func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Request) {
 	if _, err := io.ReadAll(req.Body); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 	defer req.Body.Close()
@@ -313,24 +313,24 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 	var err error
 
 	if name, err = h.extractName(req); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	value, err := h.metricApp.Get(req.Context(), domain.GaugeType, name)
 	if err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if value == nil {
 		err := fmt.Errorf("%w: unknown metric '%v'", domain.ErrNotFound, name)
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
 	if _, err := w.Write([]byte(fmt.Sprintf("%v", *value.Value))); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 }
@@ -339,14 +339,14 @@ func (h *metricOperationAdapter) GetGauge(w http.ResponseWriter, req *http.Reque
 // GET /
 func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, req *http.Request) {
 	if _, err := io.ReadAll(req.Body); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 	defer req.Body.Close()
 
 	metricses, err := h.metricApp.GetAllMetrics(req.Context())
 	if err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 
@@ -354,7 +354,7 @@ func (h *metricOperationAdapter) AllMetrics(w http.ResponseWriter, req *http.Req
 
 	if err := allMetricsViewTmplate.Execute(w, metricses); err != nil {
 		fullErr := fmt.Errorf("%w: generate result error - %v", domain.ErrServerInternal, err.Error())
-		handleAppError(w, fullErr)
+		handleAppError(req.Context(), w, fullErr)
 		return
 	}
 }

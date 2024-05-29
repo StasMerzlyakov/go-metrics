@@ -36,6 +36,7 @@ type Server interface {
 
 func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
 	var mwList []func(http.Handler) http.Handler
+	mwList = append(mwList, logging.EncrichWithRequestIDMW())
 	mwList = append(mwList, logging.NewLoggingResponseMW())
 	if srvConf.Key != "" {
 		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))

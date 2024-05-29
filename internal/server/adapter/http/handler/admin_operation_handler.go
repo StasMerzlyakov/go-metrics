@@ -32,11 +32,15 @@ type adminOperationAdpater struct {
 // Возвращает [http.StatusOK] в случае успешной проверки.
 func (h *adminOperationAdpater) Ping(w http.ResponseWriter, req *http.Request) {
 
-	_, _ = io.ReadAll(req.Body)
+	if _, err := io.ReadAll(req.Body); err != nil {
+		handleAppError(req.Context(), w, err)
+		return
+	}
+
 	defer req.Body.Close()
 
 	if err := h.adminApp.Ping(req.Context()); err != nil {
-		handleAppError(w, err)
+		handleAppError(req.Context(), w, err)
 		return
 	}
 

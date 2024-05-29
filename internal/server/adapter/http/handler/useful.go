@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -42,8 +43,8 @@ func TodoResponse(res http.ResponseWriter, message string) {
     `, message)
 }
 
-func handleAppError(w http.ResponseWriter, err error) {
-	logger := domain.GetMainLogger()
+func handleAppError(ctx context.Context, w http.ResponseWriter, err error) {
+	logger := domain.GetCtxLogger(ctx)
 
 	action := domain.GetAction(2) //  интересует имя метода, из которого взывался handleAppError
 
