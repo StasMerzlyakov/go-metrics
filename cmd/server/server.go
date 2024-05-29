@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
@@ -17,9 +16,9 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/retry"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/wrapper"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
@@ -45,6 +44,30 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 	mwList = append(mwList, compress.NewUncompressGZIPRequestMW())
 
 	mwList = append(mwList, logging.NewLoggingRequestMW())
+
+	// при работе с Postgres добавляем retriable-обертку
+	// функция, обрабатывающая ошибки; в нужных случаях выкидывает нужную ошибку(domain.ErrDBConnection)
+	// на которую реагирует retriableWrapper
+	pgErrPreProcFn := func(err error) error {
+		if err == nil {
+			return nil
+		}
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgerrcode.IsConnectionException(pgErr.Code) {
+				return domain.ErrDBConnection
+			}
+		}
+
+		var conErr *pgconn.ConnectError
+		if errors.As(err, &conErr) {
+			return domain.ErrDBConnection
+		}
+		return err
+	}
+	mwList = append(mwList, retry.NewRetriableRequestMWConf(
+		time.Duration(time.Second), time.Duration(2*time.Second), 4, pgErrPreProcFn,
+	))
 
 	return mwList
 }
@@ -84,31 +107,6 @@ func main() {
 
 	if srvConf.DatabaseDSN != "" {
 		storage = postgres.NewStorage(srvConf.DatabaseDSN)
-
-		// при работе с Postgres добавляем retriable-обертку
-
-		// функция, обрабатывающая ошибки; в нужных случаях выкидывает нужную ошибку(domain.ErrDBConnection)
-		// на которую реагирует retriableWrapper
-		pgErrPreProcFn := func(err error) error {
-			if err == nil {
-				return nil
-			}
-			var pgErr *pgconn.PgError
-			if errors.As(err, &pgErr) {
-				if pgerrcode.IsConnectionException(pgErr.Code) {
-					return domain.ErrDBConnection
-				}
-			}
-
-			var conErr *pgconn.ConnectError
-			if errors.As(err, &conErr) {
-				return domain.ErrDBConnection
-			}
-			return err
-		}
-
-		retriableConf := retriable.DefaultConfFn(domain.ErrDBConnection, pgErrPreProcFn)
-		storage = wrapper.NewRetriable(retriableConf, sugarLog, storage)
 
 	} else {
 		storage = memory.NewStorage()

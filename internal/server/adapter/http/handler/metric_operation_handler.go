@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -17,8 +16,6 @@ import (
 	_ "github.com/golang/mock/gomock"        // обязательно, требуется в сгенерированных mock-файлах,
 	_ "github.com/golang/mock/mockgen/model" // обязательно для корректного запуска mockgen
 )
-
-var ErrMediaType = errors.New("UnsupportedMediaTypeError") // ошибку определяю здесь - она специфична для
 
 //go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . MetricApp
 
@@ -391,7 +388,7 @@ func (h *metricOperationAdapter) sendMetrics(w http.ResponseWriter, metrics *dom
 func (h *metricOperationAdapter) checkContentType(expectedType string, req *http.Request) error {
 	contentType := req.Header.Get("Content-Type")
 	if contentType != "" && !strings.HasPrefix(contentType, expectedType) {
-		return fmt.Errorf("%w: only '%v' supported", ErrMediaType, expectedType)
+		return fmt.Errorf("%w: only '%v' supported", domain.ErrMediaType, expectedType)
 	}
 	return nil
 }

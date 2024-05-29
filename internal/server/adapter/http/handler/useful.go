@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -47,30 +46,6 @@ func handleAppError(ctx context.Context, w http.ResponseWriter, err error) {
 	logger := domain.GetCtxLogger(ctx)
 
 	action := domain.GetAction(2) //  интересует имя метода, из которого взывался handleAppError
-
-	if errors.Is(err, ErrMediaType) {
-		logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
-		return
-	}
-
-	if errors.Is(err, domain.ErrDataFormat) ||
-		errors.Is(err, domain.ErrDataDigestMismath) {
-		logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if errors.Is(err, domain.ErrServerInternal) ||
-		errors.Is(err, domain.ErrDBConnection) {
-		logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if errors.Is(err, domain.ErrNotFound) {
-		logger.Infow(action, "status", "error", "msg", err.Error())
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+	logger.Infow(action, "error", err.Error())
+	http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 }
