@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/mocks"
-	"github.com/StasMerzlyakov/go-metrics/internal/common/wrapper/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/agent/mocks"
+	"github.com/StasMerzlyakov/go-metrics/internal/agent/retriable"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
