@@ -27,7 +27,7 @@ func EnrichWithRequestIDLogger(ctx context.Context, requestID uuid.UUID, logger 
 	return resultCtx
 }
 
-// Возвращает логгер из контекста. Если не найден - то просто MainLogger
+// GetCtxLogger возвращает логгер из контекста. Если не найден - то просто MainLogger
 func GetCtxLogger(ctx context.Context) Logger {
 	if v := ctx.Value(keyLogger); v != nil {
 		lg, ok := v.(Logger)

@@ -1,3 +1,4 @@
+// Package middleware содержит мидлы приложения
 package middleware
 
 import "net/http"

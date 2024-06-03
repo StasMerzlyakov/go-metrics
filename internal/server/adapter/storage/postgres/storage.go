@@ -1,3 +1,4 @@
+// Package postgres contains go-metrics postgres storage implementation
 package postgres
 
 import (

@@ -9,7 +9,7 @@ import (
 	gPool "github.com/ungerik/go-pool"
 )
 
-// Вариант мидлы без дополнительного буфера при обработке ответа.
+// NewCompressGZIPResponseMW Вариант мидлы без дополнительного буфера при обработке ответа.
 func NewCompressGZIPResponseMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {

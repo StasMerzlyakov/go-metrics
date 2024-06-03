@@ -1,3 +1,4 @@
+// Package backup отвечает за бэкап данных приложения
 package backup
 
 import (

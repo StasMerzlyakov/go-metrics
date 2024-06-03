@@ -1,4 +1,2 @@
-/*
-Пакет app содержит реализацию вариантов использования приложения
-*/
+// Package app contains application use-cases
 package app

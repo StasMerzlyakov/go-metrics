@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Добавляет к запросу RequestID и устанавливает в контекст логгер
+// EncrichWithRequestIDMW Добавляет к запросу RequestID и устанавливает в контекст логгер
 func EncrichWithRequestIDMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		logReqFn := func(w http.ResponseWriter, req *http.Request) {

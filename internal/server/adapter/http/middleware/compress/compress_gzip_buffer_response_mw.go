@@ -20,7 +20,7 @@ func (w bufferWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-// Вариант мидлы через буфер. Можно оценить ответ.
+// NewCompressGZIPBufferResponseMW Вариант мидлы через буфер. Можно оценить ответ.
 func NewCompressGZIPBufferResponseMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {

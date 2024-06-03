@@ -14,7 +14,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-// Реализация без буфера. Хэш проверяется при возникновении EOF при чтении req.Body
+// NewCheckHashDigestRequestMW Реализация без буфера. Хэш проверяется при возникновении EOF при чтении req.Body
 // Требуется обязательное вычитывание req.Body в http.Handler и обработка ответа
 //
 // _, err := io.ReadAll(req.Body)

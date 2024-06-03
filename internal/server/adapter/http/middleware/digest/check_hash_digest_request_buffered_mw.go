@@ -13,7 +13,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-// Реализация с буфером. Хэш проверяется прямо в мидле. Для этого читается req.Body
+// NewCheckHashDigestRequestBufferedMW Реализация с буфером. Хэш проверяется прямо в мидле. Для этого читается req.Body
 func NewCheckHashDigestRequestBufferedMW(key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, req *http.Request) {

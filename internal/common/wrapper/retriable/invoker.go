@@ -1,3 +1,4 @@
+// Package retriable содержит wrapper для реализации многократного вызова функции, при возникновении ошибки.
 package retriable
 
 import (
