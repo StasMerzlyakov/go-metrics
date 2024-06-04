@@ -1,11 +1,11 @@
 .PHONY: build test clean
 
-build: test
+build: 
+	go clean -testcache
 	GOOS=linux GOARCH=amd64 go build -buildvcs=false -o=cmd/server ./cmd/server/...
 	GOOS=linux GOARCH=amd64 go build -buildvcs=false -o=cmd/agent ./cmd/agent/...
 
-test: clean
-	go clean -testcache
+test: build
 	GOOS=linux GOARCH=amd64 go build -buildvcs=false -o=cmd/staticlint ./cmd/staticlint/...
 	cmd/staticlint/staticlint ./...
 	go mod tidy

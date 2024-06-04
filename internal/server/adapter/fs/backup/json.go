@@ -27,6 +27,7 @@ type jsonFormatter struct {
 }
 
 func (jf *jsonFormatter) Write(ctx context.Context, metricses []domain.Metrics) error {
+
 	logger := domain.GetCtxLogger(ctx)
 	action := domain.GetAction(1)
 	if jf.fileStoragePath == "" {

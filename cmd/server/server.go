@@ -107,7 +107,6 @@ func main() {
 
 	if srvConf.DatabaseDSN != "" {
 		storage = postgres.NewStorage(srvConf.DatabaseDSN)
-
 	} else {
 		storage = memory.NewStorage()
 	}
