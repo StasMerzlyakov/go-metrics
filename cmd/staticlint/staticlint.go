@@ -4,7 +4,7 @@
 // - github.com/jingyugao/rowserrcheck/passes/rowserr
 // - github.com/kisielk/errcheck/errcheck
 //
-// If `config.json` exists  in the current directory it will be used for configuration reading.
+// If `config.json` exists in the current project directory it will be used for reading excludedchecks.
 //
 // content: {
 //
@@ -13,6 +13,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"github.com/jingyugao/rowserrcheck/passes/rowserr"
 	"github.com/kisielk/errcheck/errcheck"
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/appends"
 	"golang.org/x/tools/go/analysis/passes/asmdecl"
 	"golang.org/x/tools/go/analysis/passes/assign"
@@ -53,7 +55,6 @@ import (
 	"golang.org/x/tools/go/analysis/passes/unreachable"
 	"golang.org/x/tools/go/analysis/passes/unsafeptr"
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
-	"golang.org/x/tools/go/analysis/unitchecker"
 	"honnef.co/go/tools/staticcheck"
 )
 
@@ -61,7 +62,7 @@ type ConfigData struct {
 	ExcludedChecks []string `json:"excludedChecks"`
 }
 
-const Config = "config.json"
+const ConfigX = "config.json"
 
 func main() {
 
@@ -74,17 +75,17 @@ func main() {
 	}
 
 	exPath := filepath.Dir(ex)
-	t := filepath.Join(exPath, Config)
-	fmt.Println(t)
+	confFilePath := filepath.Join(exPath, ConfigX)
+	fmt.Println(confFilePath)
 
-	/*data, err := os.ReadFile(confFilePath)
+	data, err := os.ReadFile(ConfigX)
 	if err != nil {
-		fmt.Printf("can't find conf file: %s; used default conifguration\n", confFilePath)
+		fmt.Printf("can't find conf file: %s; used default conifguration\n", ConfigX)
 	} else {
 		if err = json.Unmarshal(data, &cfg); err != nil {
 			panic(err)
 		}
-	}*/
+	}
 
 	excludedChecks := make(map[string]bool)
 	for _, v := range cfg.ExcludedChecks {
@@ -158,5 +159,7 @@ func main() {
 		analyzers = append(analyzers, rser) // rowserrcheck is a static analysis tool which checks whether sql.Rows.Err is correctly checked
 	}
 
-	unitchecker.Main(analyzers...)
+	multichecker.Main(
+		analyzers...,
+	)
 }
