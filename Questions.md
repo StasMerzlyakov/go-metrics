@@ -39,6 +39,11 @@ go vet -vettool=cmd/staticlint/staticlint ./...
 есть ли идеи?
 
 
+5. go vet  - Можно ли отключить конкретный чекер на конкретной строке?
+
+Прим. internal/exitcheck/testdata/pkg2/pkg2.go
+
+
 5. (__ответ получен__ - Да) Цикл в b.Run 
 
    Цикл в bench-тесте: до b.N или до фиксированного testN?

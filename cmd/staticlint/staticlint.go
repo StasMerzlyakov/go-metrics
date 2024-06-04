@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/osexit"
 	"github.com/jingyugao/rowserrcheck/passes/rowserr"
 	"github.com/kisielk/errcheck/errcheck"
 	"golang.org/x/tools/go/analysis"
@@ -157,6 +158,12 @@ func main() {
 
 	if !excludedChecks[rser.Name] {
 		analyzers = append(analyzers, rser) // rowserrcheck is a static analysis tool which checks whether sql.Rows.Err is correctly checked
+	}
+
+	// osexit
+	ocheck := osexit.Analyzer
+	if !excludedChecks[ocheck.Name] {
+		analyzers = append(analyzers, ocheck) // prohibits the use of a direct os.Exit call in the main function of the main package.
 	}
 
 	multichecker.Main(
