@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,12 +13,27 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 )
 
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
+func printVersion() {
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
+}
+
 type Agent interface {
 	Start(ctx context.Context)
 	Wait()
 }
 
 func main() {
+
+	printVersion()
+
 	agentCfg, err := config.LoadAgentConfig()
 	if err != nil {
 		log.Fatal(err)
