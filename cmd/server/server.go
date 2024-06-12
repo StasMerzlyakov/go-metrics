@@ -33,6 +33,10 @@ type Server interface {
 	Shutdown(ctx context.Context)
 }
 
+const (
+	maxRetryCount = 4
+)
+
 func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
 	var mwList []func(http.Handler) http.Handler
 	mwList = append(mwList, logging.EncrichWithRequestIDMW())
@@ -66,7 +70,10 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 		return err
 	}
 	mwList = append(mwList, retry.NewRetriableRequestMWConf(
-		time.Duration(time.Second), time.Duration(2*time.Second), 4, pgErrPreProcFn,
+		time.Duration(time.Second),
+		time.Duration(2*time.Second),
+		maxRetryCount,
+		pgErrPreProcFn,
 	))
 
 	return mwList
