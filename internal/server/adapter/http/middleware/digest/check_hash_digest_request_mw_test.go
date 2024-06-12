@@ -110,7 +110,7 @@ func TestCheckHashDigestRequestMW_3_Digest_Mistmach(t *testing.T) {
 		func(w http.ResponseWriter, req *http.Request) {
 			_, err := io.ReadAll(req.Body)
 			if err != nil && err != io.EOF {
-				http.Error(w, "", http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
 			defer req.Body.Close()
 		}).AnyTimes()
