@@ -1,3 +1,4 @@
+// Package middleware contains go-metrics middleware
 package middleware
 
 import (

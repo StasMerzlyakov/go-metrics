@@ -1,3 +1,4 @@
+// Package agent содежит конфигурацию и код агента
 package agent
 
 import (

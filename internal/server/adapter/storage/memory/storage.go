@@ -1,3 +1,4 @@
+// Package memory contains go-metrics memory storage implementation
 package memory
 
 import (

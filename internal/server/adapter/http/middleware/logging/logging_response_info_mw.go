@@ -43,8 +43,8 @@ func (lw *loggingResponseWriter) WriteHeader(statusCode int) {
 
 func NewLoggingResponseMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
-		log := domain.GetMainLogger()
 		lrw := func(w http.ResponseWriter, r *http.Request) {
+			log := domain.GetCtxLogger(r.Context())
 			lw := &loggingResponseWriter{
 				responseData: &responseData{
 					status: http.StatusOK,

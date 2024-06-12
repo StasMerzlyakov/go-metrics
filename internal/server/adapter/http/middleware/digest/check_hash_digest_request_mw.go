@@ -12,10 +12,9 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"go.uber.org/zap"
 )
 
-// Реализация без буфера. Хэш проверяется при возникновении EOF при чтении req.Body
+// NewCheckHashDigestRequestMW Реализация без буфера. Хэш проверяется при возникновении EOF при чтении req.Body
 // Требуется обязательное вычитывание req.Body в http.Handler и обработка ответа
 //
 // _, err := io.ReadAll(req.Body)
@@ -25,7 +24,7 @@ import (
 func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		cmprFn := func(w http.ResponseWriter, r *http.Request) {
-			log := domain.GetMainLogger()
+			log := domain.GetCtxLogger(r.Context())
 
 			if r.Method == http.MethodGet {
 				next.ServeHTTP(w, r)
@@ -34,7 +33,11 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 
 			hashSHA256Hex := r.Header.Get("HashSHA256")
 			if hashSHA256Hex == "" {
-				_, _ = io.ReadAll(r.Body)
+				if _, err := io.ReadAll(r.Body); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
 				defer r.Body.Close()
 
 				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataFormat)
@@ -45,7 +48,10 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 
 			hashSHA256, err := hex.DecodeString(hashSHA256Hex)
 			if err != nil {
-				_, _ = io.ReadAll(r.Body)
+				if _, err := io.ReadAll(r.Body); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 				defer r.Body.Close()
 
 				errMsg := fmt.Errorf("%w: decode HashSHA256 header err: %v", domain.ErrDataDigestMismath, err.Error())
@@ -59,7 +65,6 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 				hasher:     hasher,
 				expected:   hashSHA256,
 				ReadCloser: r.Body,
-				log:        log,
 			}
 			r.Body = reader
 			next.ServeHTTP(w, r)
@@ -73,7 +78,6 @@ type hasherReader struct {
 	hasher   hash.Hash
 	expected []byte
 	io.ReadCloser
-	log *zap.SugaredLogger
 }
 
 func (hr *hasherReader) Read(p []byte) (n int, err error) {
@@ -94,10 +98,7 @@ func (hr *hasherReader) Read(p []byte) (n int, err error) {
 				domain.ErrDataDigestMismath,
 				hex.EncodeToString(hr.expected),
 				hex.EncodeToString(value))
-			hr.log.Infow("CheckHashDigestRequestMW", "status", "ERROR", "msg", fullErr.Error())
 			return 0, fullErr
-		} else {
-			hr.log.Infow("CheckHashDigestRequestMW", "status", "OK")
 		}
 	}
 	return

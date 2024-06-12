@@ -1,3 +1,4 @@
+// Package middleware содержит мидлы приложения
 package middleware
 
 import "net/http"
@@ -9,4 +10,14 @@ func Conveyor(h http.Handler, middlewares ...Middleware) http.Handler {
 		h = middleware(h)
 	}
 	return h
+}
+
+func ConveyorFunc(h http.Handler, middlewares ...Middleware) http.HandlerFunc {
+	handler := Conveyor(h, middlewares...)
+	return handler.ServeHTTP
+}
+
+//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . Handler
+type Handler interface {
+	ServeHTTP(http.ResponseWriter, *http.Request)
 }

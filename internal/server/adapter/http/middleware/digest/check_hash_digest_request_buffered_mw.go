@@ -13,15 +13,16 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-// Реализация с буфером. Хэш проверяется прямо в мидле. Для этого читается req.Body
+// NewCheckHashDigestRequestBufferedMW Реализация с буфером. Хэш проверяется прямо в мидле. Для этого читается req.Body
 func NewCheckHashDigestRequestBufferedMW(key string) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
-		log := domain.GetMainLogger()
 		cmprFn := func(w http.ResponseWriter, req *http.Request) {
+			log := domain.GetCtxLogger(req.Context())
+			action := domain.GetAction(1)
 			hashSHA256Hex := req.Header.Get("HashSHA256")
 			if hashSHA256Hex == "" {
 				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataFormat)
-				log.Infow("check_hash_digest_request_mw", "err", errMsg.Error())
+				log.Errorw(action, "error", errMsg.Error())
 				http.Error(w, errMsg.Error(), http.StatusNotFound)
 				return
 			}
@@ -29,7 +30,7 @@ func NewCheckHashDigestRequestBufferedMW(key string) middleware.Middleware {
 			hashSHA256, err := hex.DecodeString(hashSHA256Hex)
 			if err != nil {
 				errMsg := fmt.Errorf("%w: decode HashSHA256 header err: %v", domain.ErrDataDigestMismath, err.Error())
-				log.Infow("check_hash_digest_request_mw", "err", errMsg.Error())
+				log.Infow(action, "error", errMsg.Error())
 				http.Error(w, errMsg.Error(), http.StatusBadRequest)
 				return
 			}
@@ -45,7 +46,7 @@ func NewCheckHashDigestRequestBufferedMW(key string) middleware.Middleware {
 			if !bytes.Equal(hashSHA256, hashValue) {
 				err := fmt.Errorf("%w: expected %v, actual %v",
 					domain.ErrDataDigestMismath, hex.EncodeToString(hashSHA256), hex.EncodeToString(hashValue))
-				log.Infow("check_hash_digest_request_mw", "err", err.Error())
+				log.Infow(action, "error", err.Error())
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 

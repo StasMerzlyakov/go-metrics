@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
@@ -42,14 +43,15 @@ func (bU *backUper) RestoreBackUp(ctx context.Context) error {
 
 func (bU *backUper) DoBackUp(ctx context.Context) error {
 	logger := domain.GetMainLogger()
+	action := domain.GetAction(1)
 	metrics, err := bU.storage.GetAllMetrics(ctx)
 	if err != nil {
 		return err
 	}
 	err = bU.formatter.Write(ctx, metrics)
 	if err != nil {
+		logger.Errorf(action, "error", fmt.Sprintf("backup error - %s", err.Error()))
 		return err
 	}
-	logger.Infow("DoBackUp", "status", "ok", "msg", "backup is done")
 	return nil
 }

@@ -11,7 +11,7 @@ import (
 func NewLoggingRequestMW() middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		logReqFn := func(w http.ResponseWriter, req *http.Request) {
-			log := domain.GetMainLogger()
+			log := domain.GetCtxLogger(req.Context())
 			start := time.Now()
 			uri := req.RequestURI
 			method := req.Method
