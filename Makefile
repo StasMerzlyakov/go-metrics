@@ -9,5 +9,8 @@ test: build
 	GOOS=linux GOARCH=amd64 go build -buildvcs=false -o=cmd/staticlint ./cmd/staticlint/...
 	cmd/staticlint/staticlint ./...
 	go mod tidy
-	go mod vendor
 	go test ./...
+
+cover: test
+	go tool cover -html=cover.out -o coverage.html
+	firefox coverage.html &
