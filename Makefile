@@ -9,6 +9,7 @@ test: build
 	GOOS=linux GOARCH=amd64 go build -buildvcs=false -o=cmd/staticlint ./cmd/staticlint/...
 	cmd/staticlint/staticlint ./...
 	go mod tidy
+	go clean -modcache
 	go test ./... -coverprofile cover.out
 
 cover: test
