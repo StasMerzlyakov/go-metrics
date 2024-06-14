@@ -12,7 +12,6 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
@@ -164,7 +163,8 @@ func main() {
 
 	// мидлы
 	mwList := createMiddleWareList(srvConf)
-	middleware.Add(httpHandler, mwList...)
+
+	httpHandler.Use(mwList...)
 
 	// операции с метриками
 	metricApp := app.NewMetrics(storage)
