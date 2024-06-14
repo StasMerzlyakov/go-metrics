@@ -8,7 +8,7 @@ import (
 
 type ContextKey string
 
-const keyLogger = ContextKey("Logger")
+const LoggerKey = ContextKey("Logger")
 const LoggerKeyRequestID = "requestID"
 
 func EnrichWithRequestIDLogger(ctx context.Context, requestID uuid.UUID, logger Logger) context.Context {
@@ -16,13 +16,13 @@ func EnrichWithRequestIDLogger(ctx context.Context, requestID uuid.UUID, logger 
 		internalLogger: logger,
 		requestID:      requestID.String(),
 	}
-	resultCtx := context.WithValue(ctx, keyLogger, requestIDLogger)
+	resultCtx := context.WithValue(ctx, LoggerKey, requestIDLogger)
 	return resultCtx
 }
 
 // GetCtxLogger возвращает логгер из контекста. Если не найден - то просто MainLogger
 func GetCtxLogger(ctx context.Context) Logger {
-	if v := ctx.Value(keyLogger); v != nil {
+	if v := ctx.Value(LoggerKey); v != nil {
 		lg, ok := v.(Logger)
 		if !ok {
 			return GetMainLogger()
