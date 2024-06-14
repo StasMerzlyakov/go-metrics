@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/app/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +13,7 @@ func TestAdmin(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockPinger := mocks.NewMockPinger(ctrl)
+	mockPinger := NewMockPinger(ctrl)
 
 	mockPinger.EXPECT().Ping(gomock.Any()).Return(nil).Times(1)
 

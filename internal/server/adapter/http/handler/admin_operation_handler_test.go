@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
@@ -19,7 +18,7 @@ func TestAdminOperation_Ping(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockAdminApp(ctrl)
+	m := NewMockAdminApp(ctrl)
 
 	m.EXPECT().Ping(gomock.Any()).Return(nil).Times(1)
 

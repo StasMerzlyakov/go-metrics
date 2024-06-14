@@ -4,11 +4,6 @@ import (
 	"context"
 )
 
-//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . Pinger
-type Pinger interface {
-	Ping(ctx context.Context) error
-}
-
 func NewAdminApp(pinger Pinger) *adminApp {
 	return &adminApp{
 		pinger: pinger,

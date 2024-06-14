@@ -5,18 +5,17 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/agent/retriable"
 	"github.com/sirupsen/logrus"
 )
 
 type Invoker interface {
-	Invoke(fn retriable.InvokableFn, ctx context.Context) error
+	Invoke(fn InvokableFn, ctx context.Context) error
 }
 
-func NewHTTPRetryableResultSender(rConf retriable.RetriableInvokerConf, resultSender ResultSender) *httpRetriableResultSender {
-	conf := retriable.DefaultConf(syscall.ECONNREFUSED)
+func NewHTTPRetryableResultSender(rConf RetriableInvokerConf, resultSender ResultSender) *httpRetriableResultSender {
+	conf := DefaultConf(syscall.ECONNREFUSED)
 	return &httpRetriableResultSender{
-		invoker: retriable.CreateRetriableInvokerConf(conf, &logrusWrapper{}),
+		invoker: CreateRetriableInvokerConf(conf, &logrusWrapper{}),
 		sender:  resultSender,
 	}
 }

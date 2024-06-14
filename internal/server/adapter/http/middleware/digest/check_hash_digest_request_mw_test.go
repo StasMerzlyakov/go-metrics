@@ -14,7 +14,6 @@ import (
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/mock/gomock"
@@ -28,7 +27,7 @@ func TestCheckHashDigestRequestMW_1_Header_Not_Exists(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHandler := mocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, req *http.Request) {
@@ -65,7 +64,7 @@ func TestCheckHashDigestRequestMW_2_Header_Is_Not_Hex(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHandler := mocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, req *http.Request) {
@@ -104,7 +103,7 @@ func TestCheckHashDigestRequestMW_3_Digest_Mistmach(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHandler := mocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, req *http.Request) {
@@ -146,7 +145,7 @@ func TestCheckHashDigestRequestMW_4_Digest_OK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHandler := mocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, req *http.Request) {
@@ -194,7 +193,7 @@ func TestCheckHashDigestRequestMW_4_Json_OK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockHandler := mocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, req *http.Request) {

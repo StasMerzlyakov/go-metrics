@@ -11,13 +11,6 @@ type ContextKey string
 const keyLogger = ContextKey("Logger")
 const LoggerKeyRequestID = "requestID"
 
-//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . Logger
-type Logger interface {
-	Debugw(msg string, keysAndValues ...any)
-	Infow(msg string, keysAndValues ...any)
-	Errorw(msg string, keysAndValues ...any)
-}
-
 func EnrichWithRequestIDLogger(ctx context.Context, requestID uuid.UUID, logger Logger) context.Context {
 	requestIDLogger := &requestIDLogger{
 		internalLogger: logger,

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/mocks"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
@@ -30,7 +29,7 @@ func TestMetricOperation_Counter(t *testing.T) {
 	testValue := int64(132)
 	testValueStr := fmt.Sprintf("%v", testValue)
 
-	m := mocks.NewMockMetricApp(ctrl)
+	m := NewMockMetricApp(ctrl)
 
 	counterName := "TestCounter"
 
@@ -80,7 +79,7 @@ func TestMetricOperation_Gague(t *testing.T) {
 	testValue := float64(132.123)
 	testValueStr := fmt.Sprintf("%v", testValue)
 
-	m := mocks.NewMockMetricApp(ctrl)
+	m := NewMockMetricApp(ctrl)
 
 	gaugeName := "TestGauge"
 
@@ -126,7 +125,7 @@ func TestMetricOperation_All(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockMetricApp(ctrl)
+	m := NewMockMetricApp(ctrl)
 
 	m.EXPECT().GetAllMetrics(gomock.Any()).Return([]domain.Metrics{
 		{
@@ -166,7 +165,7 @@ func TestMetricOperation_Counter_Update(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockMetricApp(ctrl)
+	m := NewMockMetricApp(ctrl)
 
 	testValue := int64(2)
 	counterName := "PoolCount"
@@ -240,7 +239,7 @@ func TestMetricOperation_Gague_Update(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockMetricApp(ctrl)
+	m := NewMockMetricApp(ctrl)
 
 	testValue := float64(123.123)
 	gaugeName := "RandomValue"
@@ -316,7 +315,7 @@ func TestMetricOperation_PostMetrics(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockMetricApp(ctrl)
+	m := NewMockMetricApp(ctrl)
 
 	testValue := float64(123.123)
 	gaugeName := "RandomValue"

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/domain/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,7 @@ func TestEnrichContextRequestID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockLogger(ctrl)
+	m := NewMockLogger(ctrl)
 
 	testLoggerFn := func(msg string, keysAndValues ...any) {
 		// Проверяем что что при вызове метода логирования добавляется информация о пользователе и requstId

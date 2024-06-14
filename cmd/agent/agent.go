@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
-	"github.com/StasMerzlyakov/go-metrics/internal/agent/retriable"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 )
 
@@ -46,7 +45,7 @@ func main() {
 	resultSender := agent.NewHTTPResultSender(agentCfg)
 
 	// Отвечает за повтор отправки
-	retryCfg := retriable.DefaultConf(syscall.ECONNREFUSED)
+	retryCfg := agent.DefaultConf(syscall.ECONNREFUSED)
 	retryableResultSender := agent.NewHTTPRetryableResultSender(*retryCfg, resultSender)
 
 	// Отвечает за пулы отправки

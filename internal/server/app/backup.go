@@ -9,17 +9,6 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . AllMetricsStorage,BackupFormatter
-type AllMetricsStorage interface {
-	SetAllMetrics(ctx context.Context, in []domain.Metrics) error
-	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
-}
-
-type BackupFormatter interface {
-	Write(ctx context.Context, in []domain.Metrics) error
-	Read(ctx context.Context) ([]domain.Metrics, error)
-}
-
 func NewBackup(storage AllMetricsStorage, formatter BackupFormatter) *backUper {
 	return &backUper{
 		storage:   storage,
