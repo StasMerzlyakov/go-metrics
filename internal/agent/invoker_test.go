@@ -1,4 +1,4 @@
-package retriable_test
+package agent_test
 
 import (
 	"context"
@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/StasMerzlyakov/go-metrics/internal/agent/mocks"
-	"github.com/StasMerzlyakov/go-metrics/internal/agent/retriable"
+	"github.com/StasMerzlyakov/go-metrics/internal/agent"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,10 +17,10 @@ func TestInvoker1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mLog := mocks.NewMockLogger(ctrl)
+	mLog := NewMockLogger(ctrl)
 	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
 
-	conf := &retriable.RetriableInvokerConf{
+	conf := &agent.RetriableInvokerConf{
 		RetriableErr:    io.EOF,
 		FirstRetryDelay: time.Duration(time.Second),
 		DelayIncrement:  time.Duration(2 * time.Second),
@@ -61,7 +60,7 @@ func TestInvoker1(t *testing.T) {
 			}
 
 			conf.RetriableErr = test.retriableError
-			invoker := retriable.CreateRetriableInvokerConf(conf, mLog)
+			invoker := agent.CreateRetriableInvokerConf(conf, mLog)
 
 			maxTestDuration := maxInvokationDuration(conf)
 			startTime := time.Now()
@@ -73,7 +72,7 @@ func TestInvoker1(t *testing.T) {
 	}
 }
 
-func maxInvokationDuration(conf *retriable.RetriableInvokerConf) time.Duration {
+func maxInvokationDuration(conf *agent.RetriableInvokerConf) time.Duration {
 	if conf.RetryCount == 0 {
 		return 0
 	}
@@ -87,10 +86,10 @@ func TestInvokerCancellation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mLog := mocks.NewMockLogger(ctrl)
+	mLog := NewMockLogger(ctrl)
 	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
 
-	conf := &retriable.RetriableInvokerConf{
+	conf := &agent.RetriableInvokerConf{
 		RetriableErr:    io.EOF,
 		FirstRetryDelay: time.Duration(time.Second),
 		DelayIncrement:  time.Duration(2 * time.Second),
@@ -121,7 +120,7 @@ func TestInvokerCancellation(t *testing.T) {
 			}
 
 			conf.RetriableErr = test.retriableError
-			invoker := retriable.CreateRetriableInvokerConf(conf, mLog)
+			invoker := agent.CreateRetriableInvokerConf(conf, mLog)
 			ctx, cancelFn := context.WithTimeout(context.Background(), time.Millisecond*500)
 			startTime := time.Now()
 			err := invoker.Invoke(fn, ctx)

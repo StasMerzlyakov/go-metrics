@@ -11,11 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type MetricStorage interface {
-	Refresh() error
-	GetMetrics() []Metrics
-}
-
 func Create(config *config.AgentConfiguration,
 	resultSender ResultSender,
 	metricStorage MetricStorage,
@@ -59,7 +54,7 @@ func (a *agent) pollMetrics(ctx context.Context) {
 
 		case <-time.After(pollInterval):
 			if err := a.metricStorage.Refresh(); err != nil {
-				logrus.Fatalf("PollMetrics metrics error: %v", err)
+				logrus.Errorf("PollMetrics metrics error: %v", err)
 			}
 			logrus.Info("PollMetrics SUCCESS")
 		}
