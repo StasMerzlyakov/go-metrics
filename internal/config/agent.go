@@ -16,6 +16,7 @@ type AgentConfiguration struct {
 	Key            string `env:"KEY"`
 	BatchSize      int    `env:"BATCH_SIZE"`
 	RateLimit      int    `env:"RATE_LIMIT"`
+	CryptoKey      string `env:"CRYPTO_KEY"`
 }
 
 func LoadAgentConfig() (*AgentConfiguration, error) {
@@ -27,6 +28,7 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 	flag.IntVar(&agentCfg.ReportInterval, "r", 10, "reportInterval in seconds")
 	flag.IntVar(&agentCfg.BatchSize, "b", 5, "metric count of metrics per update request")
 	flag.IntVar(&agentCfg.RateLimit, "l", 1, "max update simultaneous request count")
+	flag.StringVar(&agentCfg.CryptoKey, "crypto-key", "", "rsa public key file name")
 
 	flag.StringVar(&agentCfg.Key, "k", "", "hashSha256 key")
 	flag.Usage = func() {

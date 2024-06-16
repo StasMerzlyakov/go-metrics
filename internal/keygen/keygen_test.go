@@ -20,8 +20,6 @@ func TestKeyGen(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(privKeyFile.Name())
 
-	defer os.RemoveAll(tempDir)
-
 	err = keygen.Create(pubKeyFile, privKeyFile)
 	require.NoError(t, err)
 

@@ -10,9 +10,12 @@ import (
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
+	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/cryptomw"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/retry"
@@ -23,7 +26,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
-
 	"go.uber.org/zap"
 )
 
@@ -40,6 +42,7 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 	var mwList []func(http.Handler) http.Handler
 	mwList = append(mwList, logging.EncrichWithRequestIDMW())
 	mwList = append(mwList, logging.NewLoggingResponseMW())
+
 	if srvConf.Key != "" {
 		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))
 	}
@@ -169,7 +172,16 @@ func main() {
 	// операции с метриками
 	metricApp := app.NewMetrics(storage)
 
-	var updateMWList []func(http.Handler) http.Handler
+	var updateMWList []middleware.Middleware
+
+	if srvConf.CryptoKey != "" {
+		privKey, err := keygen.ReadPrivKey(srvConf.CryptoKey)
+		if err != nil {
+			panic(err)
+		}
+		updateMWList = append(updateMWList, cryptomw.NewDecrytpMw(privKey))
+	}
+
 	if srvConf.Key != "" {
 		updateMWList = append(updateMWList, digest.NewCheckHashDigestRequestMW(srvConf.Key))
 	}
