@@ -1,8 +1,8 @@
 package keygen_test
 
 import (
+	"bytes"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
@@ -37,5 +37,5 @@ func TestKeyGen(t *testing.T) {
 	res, err := keygen.DecryptWithPrivateKey(ciphertext, privKeyRestored)
 	require.NoError(t, err)
 
-	require.True(t, reflect.DeepEqual(testBytes, res))
+	require.Equal(t, 0, bytes.Compare(testBytes, res))
 }
