@@ -203,20 +203,26 @@ func main() {
 		IdleTimeout: 0,
 	}
 
-	go func() {
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			sugarLog.Fatalw("ListenAndServe", "msg", err.Error())
-			panic(err)
-		}
-	}()
-
 	// --------------- Обрабатываем остановку сервера --------------
 	exit := make(chan os.Signal, 1)
-	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(exit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	idleConnsClosed := make(chan struct{})
 
-	defer func() {
+	go func() {
+		<-exit
+		sugarLog.Info("Shutdown")
 		cancelFn()
-		srv.Shutdown(srvCtx)
+		if err := srv.Shutdown(context.Background()); err != nil {
+			sugarLog.Fatalw("Shutdown", "error", err.Error())
+		}
+
+		close(idleConnsClosed)
 	}()
-	<-exit
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		sugarLog.Fatalw("ListenAndServe", "error", err.Error())
+		panic(err)
+	}
+
+	<-idleConnsClosed
 }
