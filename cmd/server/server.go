@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
+	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/cryptomw"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/retry"
@@ -24,7 +26,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
-
 	"go.uber.org/zap"
 )
 
@@ -33,10 +34,15 @@ type Server interface {
 	Shutdown(ctx context.Context)
 }
 
+const (
+	maxRetryCount = 4
+)
+
 func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handler) http.Handler {
 	var mwList []func(http.Handler) http.Handler
 	mwList = append(mwList, logging.EncrichWithRequestIDMW())
 	mwList = append(mwList, logging.NewLoggingResponseMW())
+
 	if srvConf.Key != "" {
 		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))
 	}
@@ -66,7 +72,10 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 		return err
 	}
 	mwList = append(mwList, retry.NewRetriableRequestMWConf(
-		time.Duration(time.Second), time.Duration(2*time.Second), 4, pgErrPreProcFn,
+		time.Duration(time.Second),
+		time.Duration(2*time.Second),
+		maxRetryCount,
+		pgErrPreProcFn,
 	))
 
 	return mwList
@@ -157,12 +166,22 @@ func main() {
 
 	// мидлы
 	mwList := createMiddleWareList(srvConf)
-	middleware.Add(httpHandler, mwList...)
+
+	httpHandler.Use(mwList...)
 
 	// операции с метриками
 	metricApp := app.NewMetrics(storage)
 
-	var updateMWList []func(http.Handler) http.Handler
+	var updateMWList []middleware.Middleware
+
+	if srvConf.CryptoKey != "" {
+		privKey, err := keygen.ReadPrivKey(srvConf.CryptoKey)
+		if err != nil {
+			panic(err)
+		}
+		updateMWList = append(updateMWList, cryptomw.NewDecrytpMw(privKey))
+	}
+
 	if srvConf.Key != "" {
 		updateMWList = append(updateMWList, digest.NewCheckHashDigestRequestMW(srvConf.Key))
 	}
@@ -184,20 +203,26 @@ func main() {
 		IdleTimeout: 0,
 	}
 
-	go func() {
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			sugarLog.Fatalw("ListenAndServe", "msg", err.Error())
-			panic(err)
-		}
-	}()
-
 	// --------------- Обрабатываем остановку сервера --------------
 	exit := make(chan os.Signal, 1)
-	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(exit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	idleConnsClosed := make(chan struct{})
 
-	defer func() {
+	go func() {
+		<-exit
+		sugarLog.Info("Shutdown")
 		cancelFn()
-		srv.Shutdown(srvCtx)
+		if err := srv.Shutdown(context.Background()); err != nil {
+			sugarLog.Fatalw("Shutdown", "error", err.Error())
+		}
+
+		close(idleConnsClosed)
 	}()
-	<-exit
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		sugarLog.Fatalw("ListenAndServe", "error", err.Error())
+		panic(err)
+	}
+
+	<-idleConnsClosed
 }

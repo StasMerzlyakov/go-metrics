@@ -1,17 +1,11 @@
 package handler
 
 import (
-	"context"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
-
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . AdminApp
-type AdminApp interface {
-	Ping(ctx context.Context) error
-}
 
 func AddAdminOperations(r *chi.Mux, adminApp AdminApp) {
 

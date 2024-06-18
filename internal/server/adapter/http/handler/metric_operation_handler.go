@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/go-chi/chi/v5"
 	chiMW "github.com/go-chi/chi/v5/middleware"
@@ -17,16 +17,7 @@ import (
 	_ "github.com/golang/mock/mockgen/model" // обязательно для корректного запуска mockgen
 )
 
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . MetricApp
-
-type MetricApp interface {
-	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
-	Get(ctx context.Context, metricType domain.MetricType, name string) (*domain.Metrics, error)
-	UpdateAll(ctx context.Context, mtr []domain.Metrics) error
-	Update(ctx context.Context, mtr *domain.Metrics) (*domain.Metrics, error)
-}
-
-func AddMetricOperations(r *chi.Mux, metricApp MetricApp, changeDataMw ...func(http.Handler) http.Handler) {
+func AddMetricOperations(r *chi.Mux, metricApp MetricApp, changeDataMw ...middleware.Middleware) {
 	adapter := &metricOperationAdapter{
 		metricApp: metricApp,
 	}
@@ -34,8 +25,8 @@ func AddMetricOperations(r *chi.Mux, metricApp MetricApp, changeDataMw ...func(h
 	r.Get("/", adapter.AllMetrics)
 
 	r.Route("/updates", func(r chi.Router) {
-		r.Use(changeDataMw...)
-		r.Post("/", adapter.PostMetrics)
+		//r.Use(changeDataMw...)
+		r.Post("/", middleware.Conveyor(http.HandlerFunc(adapter.PostMetrics), changeDataMw...).ServeHTTP)
 	})
 
 	r.Route("/update", func(r chi.Router) {
