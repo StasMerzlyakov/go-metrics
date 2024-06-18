@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -11,11 +12,31 @@ import (
 	"github.com/caarlos0/env"
 )
 
+type Duration time.Duration
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	switch value := v.(type) {
+	case string:
+		tmp, err := time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+		*d = Duration(tmp)
+		return nil
+	default:
+		return errors.New("invalid duration")
+	}
+}
+
 type agentFileConf struct {
-	Address        *string        `json:"address"`
-	ReportInterval *time.Duration `json:"report_interval"`
-	PoolInterval   *time.Duration `json:"poll_interval"`
-	CryptoKey      *string        `json:"crypto_key"`
+	Address        string   `json:"address"`
+	ReportInterval Duration `json:"report_interval"`
+	PoolInterval   Duration `json:"poll_interval"`
+	CryptoKey      string   `json:"crypto_key"`
 }
 
 type AgentConfiguration struct {
@@ -28,7 +49,7 @@ type AgentConfiguration struct {
 	CryptoKey      string `env:"CRYPTO_KEY"`
 }
 
-func LoadConfigFromFile(fileName string) *agentFileConf {
+func LoadAgentConfigFromFile(fileName string) *agentFileConf {
 
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -47,29 +68,31 @@ func LoadConfigFromFile(fileName string) *agentFileConf {
 }
 
 const (
-	DefaultServerAddr     = "localhost:8080"
-	DefautlPollInterval   = 2
-	DefaultReportInterval = 10
-	DefaultCryptoKey      = ""
+	AgentDefaultServerAddr     = "localhost:8080"
+	AgentDefautlPollInterval   = 2
+	AgentDefaultReportInterval = 10
+	AgentDefaultCryptoKey      = ""
 )
 
-func UpdateDefaultValues(aFileConf *agentFileConf, aConf *AgentConfiguration) {
-	if aConf.ServerAddr == DefaultServerAddr && aFileConf.Address != nil {
-		aConf.ServerAddr = *aFileConf.Address
+func UpdateAgentDefaultValues(aFileConf *agentFileConf, aConf *AgentConfiguration) {
+	if aConf.ServerAddr == AgentDefaultServerAddr && aFileConf.Address != "" {
+		aConf.ServerAddr = aFileConf.Address
 	}
 
-	if aConf.PollInterval == DefautlPollInterval && aFileConf.PoolInterval != nil {
-		seconds := *aFileConf.PoolInterval
-		aConf.PollInterval = int(seconds.Seconds())
+	if aConf.PollInterval == AgentDefautlPollInterval && aFileConf.PoolInterval != 0 {
+		seconds := aFileConf.PoolInterval
+		dur := time.Duration(seconds)
+		aConf.PollInterval = int(dur.Seconds())
 	}
 
-	if aConf.ReportInterval == DefaultReportInterval && aFileConf.ReportInterval != nil {
-		seconds := *aFileConf.ReportInterval
-		aConf.ReportInterval = int(seconds.Seconds())
+	if aConf.ReportInterval == AgentDefaultReportInterval && aFileConf.ReportInterval != 0 {
+		seconds := aFileConf.ReportInterval
+		dur := time.Duration(seconds)
+		aConf.ReportInterval = int(dur.Seconds())
 	}
 
-	if aConf.CryptoKey == DefaultCryptoKey && aFileConf.CryptoKey != nil {
-		aConf.CryptoKey = *aFileConf.CryptoKey
+	if aConf.CryptoKey == AgentDefaultCryptoKey && aFileConf.CryptoKey != "" {
+		aConf.CryptoKey = aFileConf.CryptoKey
 	}
 }
 
@@ -77,12 +100,12 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 
 	agentCfg := &AgentConfiguration{}
 
-	flag.StringVar(&agentCfg.ServerAddr, "a", DefaultServerAddr, "serverAddress")
-	flag.IntVar(&agentCfg.PollInterval, "p", DefautlPollInterval, "poolInterval in seconds")
-	flag.IntVar(&agentCfg.ReportInterval, "r", DefaultReportInterval, "reportInterval in seconds")
+	flag.StringVar(&agentCfg.ServerAddr, "a", AgentDefaultServerAddr, "serverAddress")
+	flag.IntVar(&agentCfg.PollInterval, "p", AgentDefautlPollInterval, "poolInterval in seconds")
+	flag.IntVar(&agentCfg.ReportInterval, "r", AgentDefaultReportInterval, "reportInterval in seconds")
 	flag.IntVar(&agentCfg.BatchSize, "b", 5, "metric count of metrics per update request")
 	flag.IntVar(&agentCfg.RateLimit, "l", 1, "max update simultaneous request count")
-	flag.StringVar(&agentCfg.CryptoKey, "crypto-key", DefaultCryptoKey, "rsa public key file name")
+	flag.StringVar(&agentCfg.CryptoKey, "crypto-key", AgentDefaultCryptoKey, "rsa public key file name")
 
 	var configFileName string
 
@@ -97,8 +120,8 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 	flag.Parse()
 
 	if configFileName != "" {
-		aFileConf := LoadConfigFromFile(configFileName)
-		UpdateDefaultValues(aFileConf, agentCfg)
+		aFileConf := LoadAgentConfigFromFile(configFileName)
+		UpdateAgentDefaultValues(aFileConf, agentCfg)
 	}
 
 	err := env.Parse(agentCfg)
