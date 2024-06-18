@@ -1,16 +1,11 @@
-// Package retriable содержит wrapper для реализации многократного вызова функции, при возникновении ошибки.
-package retriable
+// Package agent содержит wrapper для реализации многократного вызова функции, при возникновении ошибки.
+package agent
 
 import (
 	"context"
 	"errors"
 	"time"
 )
-
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . Logger
-type Logger interface {
-	Infow(msg string, keysAndValues ...any)
-}
 
 type InvokableFn func(ctx context.Context) error
 
