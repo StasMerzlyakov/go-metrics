@@ -48,5 +48,5 @@ func handleAppError(ctx context.Context, w http.ResponseWriter, err error) {
 	action := domain.GetAction(2) //  интересует имя метода, из которого взывался handleAppError
 	logger.Infow(action, "error", err.Error())
 	clientErr := domain.MapDomainErrorToHTTPStatusErr(err)
-	http.Error(w, "", clientErr)
+	w.WriteHeader(clientErr)
 }

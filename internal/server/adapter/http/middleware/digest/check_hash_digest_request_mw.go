@@ -35,7 +35,7 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 			if hashSHA256Hex == "" {
 				if _, err := io.ReadAll(r.Body); err != nil {
 					log.Infow("check_hash_digest_request_mw", "err", err.Error())
-					http.Error(w, "", http.StatusInternalServerError)
+					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
 
@@ -43,7 +43,7 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 
 				errMsg := fmt.Errorf("%w: HashSHA256 header is not specified", domain.ErrDataFormat)
 				log.Infow("check_hash_digest_request_mw", "err", errMsg.Error())
-				http.Error(w, "", http.StatusNotFound)
+				w.WriteHeader(http.StatusNotFound)
 				return
 			}
 
@@ -51,14 +51,14 @@ func NewCheckHashDigestRequestMW(key string) middleware.Middleware {
 			if err != nil {
 				if _, err := io.ReadAll(r.Body); err != nil {
 					log.Infow("check_hash_digest_request_mw", "err", err.Error())
-					http.Error(w, "", http.StatusInternalServerError)
+					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
 				defer r.Body.Close()
 
 				errMsg := fmt.Errorf("%w: decode HashSHA256 header err: %v", domain.ErrDataDigestMismath, err.Error())
 				log.Infow("check_hash_digest_request_mw", "err", errMsg.Error())
-				http.Error(w, "", http.StatusBadRequest)
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 

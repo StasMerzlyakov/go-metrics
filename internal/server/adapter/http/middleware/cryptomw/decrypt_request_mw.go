@@ -21,7 +21,7 @@ func NewDecrytpMw(privKey *rsa.PrivateKey) middleware.Middleware {
 
 			if err != nil {
 				log.Infow(action, "error", err.Error())
-				http.Error(w, "", http.StatusBadRequest)
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 
@@ -29,7 +29,7 @@ func NewDecrytpMw(privKey *rsa.PrivateKey) middleware.Middleware {
 
 			if err != nil {
 				log.Infow(action, "error", err.Error())
-				http.Error(w, "", http.StatusBadRequest)
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 

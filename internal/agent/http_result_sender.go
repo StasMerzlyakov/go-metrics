@@ -116,7 +116,7 @@ type encryptedWriter struct {
 	buf bytes.Buffer
 }
 
-func (ew *encryptedWriter) Write(p []byte) (n int, err error) {
+func (ew *encryptedWriter) Write(p []byte) (int, error) {
 	return ew.buf.Write(p)
 }
 
