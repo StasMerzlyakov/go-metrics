@@ -18,8 +18,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
+
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
-	mmocks "github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/mocks"
+
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/retry"
 )
 
@@ -153,7 +154,7 @@ func TestRetriableMW4(t *testing.T) {
 }
 
 func createOkMockHandler(ctrl *gomock.Controller) http.Handler {
-	mockHandler := mmocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +165,7 @@ func createOkMockHandler(ctrl *gomock.Controller) http.Handler {
 }
 
 func createAnyErrHandler(ctrl *gomock.Controller) http.Handler {
-	mockHandler := mmocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +176,7 @@ func createAnyErrHandler(ctrl *gomock.Controller) http.Handler {
 }
 
 func createInernalErrExceptLastHandler(ctrl *gomock.Controller) http.Handler {
-	mockHandler := mmocks.NewMockHandler(ctrl)
+	mockHandler := NewMockHandler(ctrl)
 
 	counter := atomic.Int32{}
 	mockHandler.EXPECT().ServeHTTP(gomock.Any(), gomock.Any()).DoAndReturn(

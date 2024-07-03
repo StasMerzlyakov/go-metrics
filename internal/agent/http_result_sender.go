@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/hmac"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -15,22 +16,35 @@ import (
 	"net/http"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
+	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 )
 
 func NewHTTPResultSender(conf *config.AgentConfiguration) *httpResultSender {
-	return &httpResultSender{
+
+	sender := &httpResultSender{
 		serverAdd:  conf.ServerAddr,
 		client:     resty.New(),
 		hash256Key: conf.Key,
 	}
+
+	if conf.CryptoKey != "" {
+		pubKey, err := keygen.ReadPubKey(conf.CryptoKey)
+		if err != nil {
+			panic(err)
+		}
+		sender.pubKey = pubKey
+	}
+
+	return sender
 }
 
 type httpResultSender struct {
 	serverAdd  string
 	client     *resty.Client
 	hash256Key string
+	pubKey     *rsa.PublicKey
 }
 
 func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
@@ -42,6 +56,13 @@ func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) e
 	if err != nil {
 		logrus.Errorf("gzip.NewWriterLevel error: %v", err)
 		return err
+	}
+
+	if h.pubKey != nil {
+		wc = &encryptedWriter{
+			key:         h.pubKey,
+			WriteCloser: wc,
+		}
 	}
 
 	if h.hash256Key != "" {
@@ -87,6 +108,30 @@ func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) e
 	}
 
 	return err
+}
+
+type encryptedWriter struct {
+	key *rsa.PublicKey
+	io.WriteCloser
+	buf bytes.Buffer
+}
+
+func (ew *encryptedWriter) Write(p []byte) (n int, err error) {
+	return ew.buf.Write(p)
+}
+
+func (ew *encryptedWriter) Close() error {
+	encrypted, err := keygen.EncryptWithPublicKey(ew.buf.Bytes(), ew.key)
+	if err != nil {
+		return err
+	}
+	_, err = ew.WriteCloser.Write(encrypted)
+
+	if err != nil {
+		return err
+	}
+
+	return ew.WriteCloser.Close()
 }
 
 type hashWriter struct {

@@ -10,17 +10,6 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . Storage
-type Storage interface {
-	SetAllMetrics(ctx context.Context, marr []domain.Metrics) error
-	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
-	Set(ctx context.Context, m *domain.Metrics) error
-	Add(ctx context.Context, m *domain.Metrics) error
-	SetMetrics(ctx context.Context, metric []domain.Metrics) error
-	AddMetrics(ctx context.Context, metric []domain.Metrics) error
-	Get(ctx context.Context, id string, mType domain.MetricType) (*domain.Metrics, error)
-}
-
 type metricsUseCase struct {
 	storage         Storage
 	changeListeners []domain.ChangeListener

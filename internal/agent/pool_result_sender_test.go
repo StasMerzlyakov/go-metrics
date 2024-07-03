@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/agent"
-	"github.com/StasMerzlyakov/go-metrics/internal/agent/mocks"
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/golang/mock/gomock"
 )
@@ -16,7 +15,7 @@ func TestPoolResultSenderCancellation_1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockSender := mocks.NewMockResultSender(ctrl)
+	mockSender := NewMockResultSender(ctrl)
 
 	mockSender.EXPECT().SendMetrics(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
@@ -49,7 +48,7 @@ func TestPoolResultSenderCancellation_2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockSender := mocks.NewMockResultSender(ctrl)
+	mockSender := NewMockResultSender(ctrl)
 
 	mockSender.EXPECT().SendMetrics(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
@@ -82,7 +81,7 @@ func TestPoolResultSenderCancellation_3(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockSender := mocks.NewMockResultSender(ctrl)
+	mockSender := NewMockResultSender(ctrl)
 
 	mockSender.EXPECT().SendMetrics(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(ctx context.Context, ms []agent.Metrics) error {
@@ -121,7 +120,7 @@ func TestPoolResultSenderCancellation_4(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockSender := mocks.NewMockResultSender(ctrl)
+	mockSender := NewMockResultSender(ctrl)
 
 	rateLimit := 2
 

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
-	"github.com/StasMerzlyakov/go-metrics/internal/server/app/mocks"
+
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ func TestCheckName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockStorage(ctrl)
+	m := NewMockStorage(ctrl)
 
 	mc := app.NewMetrics(m)
 
@@ -80,7 +80,7 @@ func TestCheckMetrics(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockStorage(ctrl)
+	m := NewMockStorage(ctrl)
 
 	mc := app.NewMetrics(m)
 
@@ -143,7 +143,7 @@ func TestUpdateMetrics(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockStorage(ctrl)
+	m := NewMockStorage(ctrl)
 
 	m.EXPECT().SetMetrics(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(ctx context.Context, ms []domain.Metrics) error {
@@ -215,7 +215,7 @@ func TestUpdate_Counter(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockStorage(ctrl)
+	m := NewMockStorage(ctrl)
 
 	input := &domain.Metrics{
 		ID:    "Counter",
@@ -245,7 +245,7 @@ func TestUpdate_Gauge(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mocks.NewMockStorage(ctrl)
+	m := NewMockStorage(ctrl)
 
 	input := &domain.Metrics{
 		ID:    "Gague",
