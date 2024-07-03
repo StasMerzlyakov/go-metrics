@@ -24,6 +24,12 @@ func TestBackupRestoreBackUp(t *testing.T) {
 
 	storage := NewMockAllMetricsStorage(ctrl)
 
+	checker := NewMockMetricsChecker(ctrl)
+
+	checker.EXPECT().CheckMetrics(gomock.Any()).DoAndReturn(func(m *domain.Metrics) error {
+		return nil
+	}).AnyTimes()
+
 	t.Run("test ok", func(t *testing.T) {
 
 		var m = []domain.Metrics{
@@ -48,7 +54,7 @@ func TestBackupRestoreBackUp(t *testing.T) {
 			},
 		).Times(1)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		backUper.RestoreBackUp(context.Background())
 	})
 
@@ -58,7 +64,7 @@ func TestBackupRestoreBackUp(t *testing.T) {
 
 		storage.EXPECT().SetAllMetrics(gomock.Any(), gomock.Any()).Times(0)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		backUper.RestoreBackUp(context.Background())
 	})
 
@@ -74,7 +80,7 @@ func TestBackupRestoreBackUp(t *testing.T) {
 
 		storage.EXPECT().SetAllMetrics(gomock.Any(), gomock.Any()).Times(0)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		backUper.RestoreBackUp(context.Background())
 	})
 }
@@ -95,6 +101,12 @@ func TestBackupDoBackUp(t *testing.T) {
 
 	storage := NewMockAllMetricsStorage(ctrl)
 
+	checker := NewMockMetricsChecker(ctrl)
+
+	checker.EXPECT().CheckMetrics(gomock.Any()).DoAndReturn(func(m *domain.Metrics) error {
+		return nil
+	}).AnyTimes()
+
 	t.Run("test err", func(t *testing.T) {
 
 		expErr := errors.New("test error")
@@ -103,7 +115,7 @@ func TestBackupDoBackUp(t *testing.T) {
 
 		frmt.EXPECT().Write(gomock.Any(), gomock.Any()).Times(0)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		err := backUper.DoBackUp(context.Background())
 		assert.ErrorIs(t, err, expErr)
 
@@ -115,7 +127,7 @@ func TestBackupDoBackUp(t *testing.T) {
 
 		frmt.EXPECT().Write(gomock.Any(), gomock.Any()).Times(0)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		err := backUper.DoBackUp(context.Background())
 		assert.NoError(t, err)
 	})
@@ -142,7 +154,7 @@ func TestBackupDoBackUp(t *testing.T) {
 			return nil
 		}).Times(1)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		err := backUper.DoBackUp(context.Background())
 		assert.NoError(t, err)
 	})
@@ -168,7 +180,7 @@ func TestBackupDoBackUp(t *testing.T) {
 
 		frmt.EXPECT().Write(gomock.Any(), gomock.Any()).Return(expErr).Times(1)
 
-		backUper := app.NewBackup(storage, frmt)
+		backUper := app.NewBackup(storage, frmt, checker)
 		err := backUper.DoBackUp(context.Background())
 		assert.ErrorIs(t, err, expErr)
 	})

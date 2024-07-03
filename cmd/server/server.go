@@ -83,6 +83,7 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 
 type FullStorage interface {
 	app.Storage
+	app.AllMetricsStorage
 	app.Pinger
 	Bootstrap(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -126,9 +127,12 @@ func main() {
 		panic(err)
 	}
 
+	// операции с метриками
+	metricApp := app.NewMetrics(storage)
+
 	// -------- Бэкап ------------
 	backupFomratter := backup.NewJSON(srvConf.FileStoragePath)
-	backUper := app.NewBackup(storage, backupFomratter)
+	backUper := app.NewBackup(storage, backupFomratter, metricApp)
 
 	if srvConf.Restore {
 		// восстановленгие бэкапа
@@ -168,9 +172,6 @@ func main() {
 	mwList := createMiddleWareList(srvConf)
 
 	httpHandler.Use(mwList...)
-
-	// операции с метриками
-	metricApp := app.NewMetrics(storage)
 
 	var updateMWList []middleware.Middleware
 

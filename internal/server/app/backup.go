@@ -9,16 +9,18 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-func NewBackup(storage AllMetricsStorage, formatter BackupFormatter) *backUper {
+func NewBackup(storage AllMetricsStorage, formatter BackupFormatter, checker MetricsChecker) *backUper {
 	return &backUper{
 		storage:   storage,
 		formatter: formatter,
+		checker:   checker,
 	}
 }
 
 type backUper struct {
 	storage   AllMetricsStorage
 	formatter BackupFormatter
+	checker   MetricsChecker
 }
 
 func (bU *backUper) RestoreBackUp(ctx context.Context) error {
@@ -28,6 +30,14 @@ func (bU *backUper) RestoreBackUp(ctx context.Context) error {
 			panic(err)
 		}
 		return nil
+	}
+
+	// Проверка данных
+	for _, m := range metrics {
+		err := bU.checker.CheckMetrics(&m)
+		if err != nil {
+			return err
+		}
 	}
 
 	return bU.storage.SetAllMetrics(ctx, metrics)
