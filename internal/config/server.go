@@ -18,6 +18,7 @@ type serverFileConf struct {
 	StoreFile     string   `json:"store_file"`
 	DatabaseDSN   string   `json:"database_dsn"`
 	CryptoKey     string   `json:"crypto_key"`
+	TrustedSubnet string   `json:"trusted_subnet"`
 }
 
 const (
@@ -27,6 +28,7 @@ const (
 	ServerDefaultStoreFile     = "/tmp/metrics-db.json"
 	ServerDefaultDatabaseDSN   = ""
 	ServerDefaultCryptoKey     = ""
+	ServerDefaultTrustedSubnet = ""
 )
 
 func LoadServerConfigFromFile(fileName string) *serverFileConf {
@@ -76,6 +78,10 @@ func UpdateServerDefaultValues(sFileConf *serverFileConf, sConf *ServerConfigura
 	if sConf.CryptoKey == ServerDefaultCryptoKey && sFileConf.CryptoKey != "" {
 		sConf.CryptoKey = sFileConf.CryptoKey
 	}
+
+	if sConf.TrustedSubnet == ServerDefaultTrustedSubnet && sFileConf.TrustedSubnet != ServerDefaultTrustedSubnet {
+		sConf.TrustedSubnet = sFileConf.TrustedSubnet
+	}
 }
 
 type ServerConfiguration struct {
@@ -86,6 +92,7 @@ type ServerConfiguration struct {
 	DatabaseDSN     string `env:"DATABASE_DSN"`
 	Key             string `env:"KEY"`
 	CryptoKey       string `env:"CRYPTO_KEY"`
+	TrustedSubnet   string `env:"TRUSTED_SUBNET"`
 }
 
 type RestoreConfiguration struct {
@@ -114,6 +121,7 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	flag.StringVar(&srvConf.DatabaseDSN, "d", ServerDefaultDatabaseDSN, "PostgreSQL URL like 'postgres://username:password@localhost:5432/database_name'")
 	flag.StringVar(&srvConf.Key, "k", "", "hashSha256 key")
 	flag.StringVar(&srvConf.CryptoKey, "crypto-key", ServerDefaultCryptoKey, "rsa public key file name")
+	flag.StringVar(&srvConf.TrustedSubnet, "t", ServerDefaultTrustedSubnet, "trusted agent subnet")
 
 	var configFileName string
 

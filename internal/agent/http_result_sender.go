@@ -13,12 +13,15 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"net"
 	"net/http"
+	"strings"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 )
 
 func NewHTTPResultSender(conf *config.AgentConfiguration) *httpResultSender {
@@ -27,6 +30,7 @@ func NewHTTPResultSender(conf *config.AgentConfiguration) *httpResultSender {
 		serverAdd:  conf.ServerAddr,
 		client:     resty.New(),
 		hash256Key: conf.Key,
+		getIpGroup: &singleflight.Group{},
 	}
 
 	if conf.CryptoKey != "" {
@@ -45,6 +49,71 @@ type httpResultSender struct {
 	client     *resty.Client
 	hash256Key string
 	pubKey     *rsa.PublicKey
+	agentIP    string
+	getIpGroup *singleflight.Group
+}
+
+// ParserServerAddr return net.IP by http address
+func ParserServerAddr(serverHttpAddr string) string {
+	// serverHttpAddr examples:
+	//    localhost
+	//    127.0.0.1
+	// 	  127.0.0.1:8081
+	//    http://127.0.0.1/
+	//    https://127.0.0.1:8081/
+	serverAdd := strings.TrimSuffix(serverHttpAddr, "/")
+
+	defaultPort := "80" // default http port
+
+	if strings.Contains(serverAdd, "://") {
+		addrs := strings.Split(serverAdd, "://")
+		if addrs[0] == "https" {
+			defaultPort = "443"
+		}
+		serverAdd = addrs[1]
+	}
+
+	if !strings.Contains(serverAdd, ":") {
+		serverAdd = serverAdd + ":" + defaultPort
+	}
+
+	return serverAdd
+}
+
+// GetDialIP return preferred IP outbound for server communication
+func GetDialIP(ctx context.Context, serverAddr string) (net.IP, error) {
+	serverAddr = ParserServerAddr(serverAddr)
+
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp", serverAddr)
+
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	lAddr := conn.LocalAddr()
+
+	localAddress := lAddr.(*net.TCPAddr)
+
+	return localAddress.IP, nil
+}
+
+func (h *httpResultSender) GetIP(ctx context.Context) (string, error) {
+	if h.agentIP == "" {
+		netIPInterface, err, _ := h.getIpGroup.Do(h.serverAdd, func() (interface{}, error) {
+			ip, err := GetDialIP(ctx, h.serverAdd)
+			if err != nil {
+				return "", err
+			}
+			return ip, err
+
+		})
+		if err != nil {
+			return "", err
+		}
+		h.agentIP = netIPInterface.(net.IP).String()
+	}
+	return h.agentIP, nil
 }
 
 func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
@@ -81,11 +150,19 @@ func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) e
 	err = wc.Close()
 	if err != nil {
 		logrus.Errorf("gzip close error: %v", err)
+		return err
+	}
+
+	clientIP, err := h.GetIP(ctx)
+	if err != nil {
+		logrus.Errorf("get clinet ip error: %v", err)
+		return err
 	}
 
 	request := h.client.R().
 		SetHeader("Content-Type", "application/json; charset=UTF-8").
-		SetHeader("Content-Encoding", "gzip")
+		SetHeader("Content-Encoding", "gzip").
+		SetHeader("X-Real-IP", clientIP)
 
 	if hsr, ok := wc.(*hashWriter); ok {
 		hexValue := hex.EncodeToString(hsr.Sum())
