@@ -19,6 +19,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/retry"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/trusted"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
@@ -42,6 +43,12 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 	var mwList []func(http.Handler) http.Handler
 	mwList = append(mwList, logging.EncrichWithRequestIDMW())
 	mwList = append(mwList, logging.NewLoggingResponseMW())
+	trustedMW, err := trusted.NewTrustedSubnetCheckMW(srvConf.TrustedSubnet)
+	if err != nil {
+		panic(err)
+	}
+
+	mwList = append(mwList, trustedMW)
 
 	if srvConf.Key != "" {
 		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))
