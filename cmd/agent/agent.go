@@ -38,9 +38,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	agentCfg.UseGRPC = true
-	agentCfg.ServerAddr = "localhost:3200"
-
 	// Отвечает за сбор метрик
 	metricStorage := agent.NewMemStatsStorage()
 
