@@ -116,6 +116,9 @@ func (h *httpResultSender) GetIP(ctx context.Context) (string, error) {
 	return h.agentIP, nil
 }
 
+func (h *httpResultSender) Stop() {
+}
+
 func (h *httpResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
 	var buf bytes.Buffer
 

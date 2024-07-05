@@ -20,7 +20,10 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.31.0
 	github.com/ungerik/go-pool v0.0.0-20140720100922-d102a2c7872a
 	go.uber.org/zap v1.27.0
+	golang.org/x/sync v0.7.0
 	golang.org/x/tools v0.22.0
+	google.golang.org/grpc v1.65.0
+	google.golang.org/protobuf v1.34.2
 	gotest.tools/v3 v3.5.0
 	honnef.co/go/tools v0.4.7
 )
@@ -44,7 +47,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -74,11 +76,8 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20221208152030-732eee02a75a // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230731190214-cbb8c96f2d6d // indirect
-	google.golang.org/grpc v1.58.3 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

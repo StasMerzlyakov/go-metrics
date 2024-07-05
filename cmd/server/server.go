@@ -3,15 +3,19 @@ package main
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
+	pb "github.com/StasMerzlyakov/go-metrics/internal/proto"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
+	gdpt "github.com/StasMerzlyakov/go-metrics/internal/server/adapter/grpc"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
@@ -28,6 +32,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 type Server interface {
@@ -203,7 +208,7 @@ func main() {
 	// ppfod
 	handler.AddPProfOperations(httpHandler)
 
-	// запускаем http-сервер
+	// инициализируем http-сервер
 	srv := &http.Server{
 		Addr:        srvConf.URL,
 		Handler:     httpHandler,
@@ -211,26 +216,72 @@ func main() {
 		IdleTimeout: 0,
 	}
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			sugarLog.Fatalw("ListenAndServe", "error", err.Error())
+			panic(err)
+		}
+
+	}()
+
 	// --------------- Обрабатываем остановку сервера --------------
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	idleConnsClosed := make(chan struct{})
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-exit
 		sugarLog.Info("Shutdown")
 		cancelFn()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-srvCtx.Done()
 		if err := srv.Shutdown(context.Background()); err != nil {
 			sugarLog.Fatalw("Shutdown", "error", err.Error())
 		}
 
-		close(idleConnsClosed)
 	}()
 
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		sugarLog.Fatalw("ListenAndServe", "error", err.Error())
-		panic(err)
+	// GRPC
+	if srvConf.GRPCAddress != "" {
+		sugarLog.Info("start with grpc")
+
+		var s *grpc.Server
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			listen, err := net.Listen("tcp", srvConf.GRPCAddress)
+			if err != nil {
+				panic(err)
+			}
+
+			gAdapter := gdpt.NewGRPCAdapter(metricApp)
+			s = grpc.NewServer()
+
+			pb.RegisterMetricsServer(s, gAdapter)
+
+			if err := s.Serve(listen); err != nil {
+				panic(err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-srvCtx.Done()
+			s.GracefulStop()
+		}()
+
 	}
 
-	<-idleConnsClosed
+	wg.Wait()
 }

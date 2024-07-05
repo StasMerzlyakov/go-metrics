@@ -38,11 +38,23 @@ func main() {
 		log.Fatal(err)
 	}
 
+	agentCfg.UseGRPC = true
+	agentCfg.ServerAddr = "localhost:3200"
+
 	// Отвечает за сбор метрик
 	metricStorage := agent.NewMemStatsStorage()
 
-	// Отвечает за отправку по http
-	resultSender := agent.NewHTTPResultSender(agentCfg)
+	// Отвечает за отправку по http/grpc
+	// При наличии префикса dns
+	// https://github.com/grpc/grpc/blob/master/doc/naming.md
+	var resultSender agent.ResultSender
+	if agentCfg.UseGRPC {
+		resultSender = agent.NewGRPCResultSender(agentCfg)
+		log.Println("work via grpc")
+	} else {
+		resultSender = agent.NewHTTPResultSender(agentCfg)
+		log.Println("work via http")
+	}
 
 	// Отвечает за повтор отправки
 	retryCfg := agent.DefaultConf(syscall.ECONNREFUSED)

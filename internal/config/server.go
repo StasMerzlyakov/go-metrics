@@ -19,6 +19,7 @@ type serverFileConf struct {
 	DatabaseDSN   string   `json:"database_dsn"`
 	CryptoKey     string   `json:"crypto_key"`
 	TrustedSubnet string   `json:"trusted_subnet"`
+	GRPCAddress   string   `json:"grpc_address"`
 }
 
 const (
@@ -29,6 +30,7 @@ const (
 	ServerDefaultDatabaseDSN   = ""
 	ServerDefaultCryptoKey     = ""
 	ServerDefaultTrustedSubnet = ""
+	ServerDefaultGRPCAddr      = ""
 )
 
 func LoadServerConfigFromFile(fileName string) *serverFileConf {
@@ -82,6 +84,10 @@ func UpdateServerDefaultValues(sFileConf *serverFileConf, sConf *ServerConfigura
 	if sConf.TrustedSubnet == ServerDefaultTrustedSubnet && sFileConf.TrustedSubnet != ServerDefaultTrustedSubnet {
 		sConf.TrustedSubnet = sFileConf.TrustedSubnet
 	}
+
+	if sConf.GRPCAddress == ServerDefaultGRPCAddr && sFileConf.GRPCAddress != ServerDefaultGRPCAddr {
+		sConf.GRPCAddress = sFileConf.GRPCAddress
+	}
 }
 
 type ServerConfiguration struct {
@@ -93,6 +99,7 @@ type ServerConfiguration struct {
 	Key             string `env:"KEY"`
 	CryptoKey       string `env:"CRYPTO_KEY"`
 	TrustedSubnet   string `env:"TRUSTED_SUBNET"`
+	GRPCAddress     string `env:"GRPC_ADDRESS"`
 }
 
 type RestoreConfiguration struct {
@@ -122,6 +129,7 @@ func LoadServerConfig() (*ServerConfiguration, error) {
 	flag.StringVar(&srvConf.Key, "k", "", "hashSha256 key")
 	flag.StringVar(&srvConf.CryptoKey, "crypto-key", ServerDefaultCryptoKey, "rsa public key file name")
 	flag.StringVar(&srvConf.TrustedSubnet, "t", ServerDefaultTrustedSubnet, "trusted agent subnet")
+	flag.StringVar(&srvConf.GRPCAddress, "g", ServerDefaultGRPCAddr, "grpc endpoint address")
 
 	var configFileName string
 

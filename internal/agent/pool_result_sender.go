@@ -26,6 +26,10 @@ type poolResultSender struct {
 	startBatcherOnce sync.Once
 }
 
+func (rs *poolResultSender) Stop() {
+	rs.sender.Stop()
+}
+
 func (rs *poolResultSender) SendMetrics(ctx context.Context, metrics []Metrics) error {
 	logrus.Infof("SendMetrics start")
 
