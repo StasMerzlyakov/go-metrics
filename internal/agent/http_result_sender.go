@@ -26,8 +26,15 @@ import (
 
 func NewHTTPResultSender(conf *config.AgentConfiguration) *httpResultSender {
 
+	srvAddr := conf.ServerAddr
+
+	if !strings.HasPrefix(srvAddr, "http") {
+		srvAddr = "http://" + srvAddr
+	}
+	srvAddr = strings.TrimSuffix(srvAddr, "/")
+
 	sender := &httpResultSender{
-		serverAdd:  conf.ServerAddr,
+		serverAdd:  srvAddr,
 		client:     resty.New(),
 		hash256Key: conf.Key,
 		getIpGroup: &singleflight.Group{},

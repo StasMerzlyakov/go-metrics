@@ -265,7 +265,12 @@ func main() {
 			}
 
 			gAdapter := gdpt.NewGRPCAdapter(metricApp)
-			s = grpc.NewServer()
+			s = grpc.NewServer(
+				grpc.ChainUnaryInterceptor(
+					gdpt.EncrichWithRequestIDInterceptor(),
+					gdpt.LoggingRequestInfoInteceptor(),
+				),
+			)
 
 			pb.RegisterMetricsServer(s, gAdapter)
 

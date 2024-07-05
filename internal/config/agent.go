@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/caarlos0/env"
@@ -138,10 +137,6 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 	}
 
 	// Доп. обработка переданных данных
-	if !strings.HasPrefix(agentCfg.ServerAddr, "http") {
-		agentCfg.ServerAddr = "http://" + agentCfg.ServerAddr
-	}
-	agentCfg.ServerAddr = strings.TrimSuffix(agentCfg.ServerAddr, "/")
 
 	if agentCfg.PollInterval < 0 {
 		agentCfg.PollInterval = 2
