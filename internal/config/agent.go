@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/caarlos0/env"
@@ -37,6 +36,7 @@ type agentFileConf struct {
 	ReportInterval Duration `json:"report_interval"`
 	PoolInterval   Duration `json:"poll_interval"`
 	CryptoKey      string   `json:"crypto_key"`
+	UseGRPC        bool     `json:"use_grpc"`
 }
 
 type AgentConfiguration struct {
@@ -47,6 +47,7 @@ type AgentConfiguration struct {
 	BatchSize      int    `env:"BATCH_SIZE"`
 	RateLimit      int    `env:"RATE_LIMIT"`
 	CryptoKey      string `env:"CRYPTO_KEY"`
+	UseGRPC        bool   `env:"USE_GRPC"`
 }
 
 func LoadAgentConfigFromFile(fileName string) *agentFileConf {
@@ -72,6 +73,7 @@ const (
 	AgentDefautlPollInterval   = 2
 	AgentDefaultReportInterval = 10
 	AgentDefaultCryptoKey      = ""
+	AgentDefaultUseGRPCValue   = false
 )
 
 func UpdateAgentDefaultValues(aFileConf *agentFileConf, aConf *AgentConfiguration) {
@@ -94,6 +96,10 @@ func UpdateAgentDefaultValues(aFileConf *agentFileConf, aConf *AgentConfiguratio
 	if aConf.CryptoKey == AgentDefaultCryptoKey && aFileConf.CryptoKey != "" {
 		aConf.CryptoKey = aFileConf.CryptoKey
 	}
+
+	if !aConf.UseGRPC && aFileConf.UseGRPC {
+		aConf.UseGRPC = aFileConf.UseGRPC
+	}
 }
 
 func LoadAgentConfig() (*AgentConfiguration, error) {
@@ -106,6 +112,7 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 	flag.IntVar(&agentCfg.BatchSize, "b", 5, "metric count of metrics per update request")
 	flag.IntVar(&agentCfg.RateLimit, "l", 1, "max update simultaneous request count")
 	flag.StringVar(&agentCfg.CryptoKey, "crypto-key", AgentDefaultCryptoKey, "rsa public key file name")
+	flag.BoolVar(&agentCfg.UseGRPC, "grpc", false, "use grpc")
 
 	var configFileName string
 
@@ -130,10 +137,6 @@ func LoadAgentConfig() (*AgentConfiguration, error) {
 	}
 
 	// Доп. обработка переданных данных
-	if !strings.HasPrefix(agentCfg.ServerAddr, "http") {
-		agentCfg.ServerAddr = "http://" + agentCfg.ServerAddr
-	}
-	agentCfg.ServerAddr = strings.TrimSuffix(agentCfg.ServerAddr, "/")
 
 	if agentCfg.PollInterval < 0 {
 		agentCfg.PollInterval = 2

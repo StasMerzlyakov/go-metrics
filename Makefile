@@ -17,3 +17,9 @@ test: build
 cover: test
 	go tool cover -html=cover.out -o coverage.html
 	firefox coverage.html &
+
+proto:
+	protoc --go_out=. --go_opt=paths=source_relative \
+	  --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	  internal/proto/metrics.proto 
+

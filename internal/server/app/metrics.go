@@ -94,18 +94,6 @@ func (mc *metricsUseCase) CheckMetrics(m *domain.Metrics) error {
 	return nil
 }
 
-func (mc *metricsUseCase) SetAllMetrics(ctx context.Context, in []domain.Metrics) error {
-	// Проверка данных
-	for _, m := range in {
-		err := mc.CheckMetrics(&m)
-		if err != nil {
-			return err
-		}
-	}
-
-	return mc.storage.SetAllMetrics(ctx, in)
-}
-
 func (mc *metricsUseCase) GetAllMetrics(ctx context.Context) ([]domain.Metrics, error) {
 	return mc.storage.GetAllMetrics(ctx)
 }

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "internal/proto";
+
+message Metric {
+    string name = 1; // имя
+    enum Type {
+        GAUGE = 0;
+        COUNTER = 1;
+    }
+    Type type = 2; // тип
+    double value = 3; // значение    
+    int64 delta = 4; // дельта
+}
+
+message MetricsRequest {
+    repeated Metric metrics = 1;
+}
+
+message MetricsResponse {
+}
+
+service Metrics {
+    rpc Update(MetricsRequest) returns (MetricsResponse);
+}

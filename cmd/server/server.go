@@ -3,15 +3,19 @@ package main
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/StasMerzlyakov/go-metrics/internal/config"
 	"github.com/StasMerzlyakov/go-metrics/internal/keygen"
+	pb "github.com/StasMerzlyakov/go-metrics/internal/proto"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/fs/backup"
+	gdpt "github.com/StasMerzlyakov/go-metrics/internal/server/adapter/grpc"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/handler"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/compress"
@@ -19,6 +23,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/digest"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/logging"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/retry"
+	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/http/middleware/trusted"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/memory"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/adapter/storage/postgres"
 	"github.com/StasMerzlyakov/go-metrics/internal/server/app"
@@ -27,6 +32,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 type Server interface {
@@ -42,6 +48,12 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 	var mwList []func(http.Handler) http.Handler
 	mwList = append(mwList, logging.EncrichWithRequestIDMW())
 	mwList = append(mwList, logging.NewLoggingResponseMW())
+	trustedMW, err := trusted.NewTrustedSubnetCheckMW(srvConf.TrustedSubnet)
+	if err != nil {
+		panic(err)
+	}
+
+	mwList = append(mwList, trustedMW)
 
 	if srvConf.Key != "" {
 		mwList = append(mwList, digest.NewWriteHashDigestResponseHeaderMW(srvConf.Key))
@@ -83,6 +95,7 @@ func createMiddleWareList(srvConf *config.ServerConfiguration) []func(http.Handl
 
 type FullStorage interface {
 	app.Storage
+	app.AllMetricsStorage
 	app.Pinger
 	Bootstrap(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -126,9 +139,12 @@ func main() {
 		panic(err)
 	}
 
+	// операции с метриками
+	metricApp := app.NewMetrics(storage)
+
 	// -------- Бэкап ------------
 	backupFomratter := backup.NewJSON(srvConf.FileStoragePath)
-	backUper := app.NewBackup(storage, backupFomratter)
+	backUper := app.NewBackup(storage, backupFomratter, metricApp)
 
 	if srvConf.Restore {
 		// восстановленгие бэкапа
@@ -169,9 +185,6 @@ func main() {
 
 	httpHandler.Use(mwList...)
 
-	// операции с метриками
-	metricApp := app.NewMetrics(storage)
-
 	var updateMWList []middleware.Middleware
 
 	if srvConf.CryptoKey != "" {
@@ -195,7 +208,7 @@ func main() {
 	// ppfod
 	handler.AddPProfOperations(httpHandler)
 
-	// запускаем http-сервер
+	// инициализируем http-сервер
 	srv := &http.Server{
 		Addr:        srvConf.URL,
 		Handler:     httpHandler,
@@ -203,26 +216,77 @@ func main() {
 		IdleTimeout: 0,
 	}
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			sugarLog.Fatalw("ListenAndServe", "error", err.Error())
+			panic(err)
+		}
+
+	}()
+
 	// --------------- Обрабатываем остановку сервера --------------
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	idleConnsClosed := make(chan struct{})
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-exit
 		sugarLog.Info("Shutdown")
 		cancelFn()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-srvCtx.Done()
 		if err := srv.Shutdown(context.Background()); err != nil {
 			sugarLog.Fatalw("Shutdown", "error", err.Error())
 		}
 
-		close(idleConnsClosed)
 	}()
 
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		sugarLog.Fatalw("ListenAndServe", "error", err.Error())
-		panic(err)
+	// GRPC
+	if srvConf.GRPCAddress != "" {
+		sugarLog.Info("start with grpc")
+
+		var s *grpc.Server
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			listen, err := net.Listen("tcp", srvConf.GRPCAddress)
+			if err != nil {
+				panic(err)
+			}
+
+			gAdapter := gdpt.NewGRPCAdapter(metricApp)
+			s = grpc.NewServer(
+				grpc.ChainUnaryInterceptor(
+					gdpt.EncrichWithRequestIDInterceptor(),
+					gdpt.LoggingRequestInfoInteceptor(),
+				),
+			)
+
+			pb.RegisterMetricsServer(s, gAdapter)
+
+			if err := s.Serve(listen); err != nil {
+				panic(err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-srvCtx.Done()
+			s.GracefulStop()
+		}()
+
 	}
 
-	<-idleConnsClosed
+	wg.Wait()
 }

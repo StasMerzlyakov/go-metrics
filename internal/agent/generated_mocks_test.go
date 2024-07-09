@@ -49,6 +49,18 @@ func (mr *MockResultSenderMockRecorder) SendMetrics(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMetrics", reflect.TypeOf((*MockResultSender)(nil).SendMetrics), arg0, arg1)
 }
 
+// Stop mocks base method.
+func (m *MockResultSender) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockResultSenderMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockResultSender)(nil).Stop))
+}
+
 // MockMetricStorage is a mock of MetricStorage interface.
 type MockMetricStorage struct {
 	ctrl     *gomock.Controller

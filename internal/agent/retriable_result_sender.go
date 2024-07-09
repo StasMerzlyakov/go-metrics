@@ -40,3 +40,7 @@ func (h *httpRetriableResultSender) SendMetrics(ctx context.Context, metrics []M
 	}
 	return h.invoker.Invoke(fn, ctx)
 }
+
+func (h *httpRetriableResultSender) Stop() {
+	h.sender.Stop()
+}

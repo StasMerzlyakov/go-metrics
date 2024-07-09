@@ -6,7 +6,7 @@ import (
 	"github.com/StasMerzlyakov/go-metrics/internal/server/domain"
 )
 
-//go:generate mockgen -destination "./generated_mocks_test.go" -package ${GOPACKAGE}_test . Pinger,AllMetricsStorage,BackupFormatter,Storage
+//go:generate mockgen -destination "./generated_mocks_test.go" -package ${GOPACKAGE}_test . Pinger,AllMetricsStorage,BackupFormatter,Storage,MetricsChecker
 
 type Pinger interface {
 	Ping(ctx context.Context) error
@@ -22,12 +22,15 @@ type BackupFormatter interface {
 	Read(ctx context.Context) ([]domain.Metrics, error)
 }
 
+type MetricsChecker interface {
+	CheckMetrics(m *domain.Metrics) error
+}
+
 type Storage interface {
-	SetAllMetrics(ctx context.Context, marr []domain.Metrics) error
-	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
 	Set(ctx context.Context, m *domain.Metrics) error
 	Add(ctx context.Context, m *domain.Metrics) error
 	SetMetrics(ctx context.Context, metric []domain.Metrics) error
 	AddMetrics(ctx context.Context, metric []domain.Metrics) error
 	Get(ctx context.Context, id string, mType domain.MetricType) (*domain.Metrics, error)
+	GetAllMetrics(ctx context.Context) ([]domain.Metrics, error)
 }
